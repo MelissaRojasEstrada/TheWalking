@@ -44,16 +44,17 @@ public void morir() {
         refPantalla.mostrarArbolMuerto();
     }
     if (getRefJuego() != null) {
-        getRefJuego().onArbolMuerto();
+        getRefJuego().onArbolMuerto(); // protegido con finLock en Juego
     }
 }
     @Override
 public void subirNivel() {
     super.subirNivel();
     // El árbol solo gana vida al subir de nivel
-    setVidaInicial(getVidaInicial() + 100); // +100 por nivel
-    setVidaActual(getVidaInicial()); //restaurar a vida máxima
-    System.out.println("Árbol de la Vida subió al nivel " + getNivel() + ". Nueva vida: " + getVidaActual());
+    setVidaInicial(getVidaInicial() + 100); // +100 HP por nivel
+    setVidaActual(getVidaInicial()); // Restaurar a vida máxima
+    System.out.println("Árbol de la Vida subió al nivel " + getNivel() + 
+                      ". Nueva vida: " + getVidaActual());
 }
 
     @Override public boolean objetivoEnRango(Zombies z) { return false; }

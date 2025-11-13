@@ -29,7 +29,7 @@ public class ArmaDeContacto extends Arma {
     
     @Override
      public boolean zombieEnRango(Zombies zombie) {
-        if (zombie == null || zombie.getVidaActual() <= 0) return false;
+        if (zombie == null || zombie.getVidaActual() <= 0) return false; // ← vidaActual
         int distancia = Math.abs(getFila() - zombie.getFila())
                       + Math.abs(getColumna() - zombie.getColumna());
         return distancia <= getAlcance(); // <=1 adyacente
@@ -37,17 +37,18 @@ public class ArmaDeContacto extends Arma {
     
     @Override
      public void atacarZombie(Zombies zombie) {
-        if (zombie == null || zombie.getVidaActual() <= 0) return;
+        if (zombie == null || zombie.getVidaActual() <= 0) return;       // ← vidaActual
         if (!zombieEnRango(zombie)) {
             System.out.println(getNombre() + " no puede alcanzar a " + zombie.getNombre());
             return;
         }
 
-        int dano = calcularDano();
+        int dano = calcularDano();                       // daño por golpe = poderGolpe (ya corregido en Arma)
         int vidaRestante = zombie.recibirAtaque(dano);
         registrarAtaque(zombie, dano);
 
-        System.out.println(getNombre() + " golpeó a " + zombie.getNombre() + " causando " + dano + " de daño. Vida restante: " + vidaRestante);
+        System.out.println(getNombre() + " golpeó a " + zombie.getNombre()
+                + " causando " + dano + " de daño. Vida restante: " + vidaRestante);
     }
 
     @Override
@@ -55,15 +56,14 @@ public class ArmaDeContacto extends Arma {
         System.out.println("Arma [" + getFila() + "][" + getColumna() + "] iniciada");
         while (getVidaActual() > 0 && !isEstaDestruida()) { 
             Juego j = getRefJuego();
-            if (j != null) j.esperaSiPausado();
-            
+            if (j != null) j.esperaSiPausado();// ← vidaActual
             // Buscar objetivo cercano usando la lista que gestiona Pantalla
             Zombies objetivo = buscarZombieCercano();
 
-            if (objetivo != null && objetivo.getVidaActual() > 0) {
+            if (objetivo != null && objetivo.getVidaActual() > 0) {      // ← vidaActual
                 if (zombieEnRango(objetivo) && puedeDispararAhora()) {
                     atacarZombie(objetivo);
-                    registrarDisparo(); 
+                    registrarDisparo(); // respeta tiempoRecarga y munición
                 }
             }
 
@@ -75,11 +75,13 @@ public class ArmaDeContacto extends Arma {
     @Override
     public void subirNivel() {
         super.subirNivel(); // no debe recalcular stats en Arma
-        // Incrementos por nivel
+        // Incrementos por nivel (melee: más tanque y más daño)
         setVidaInicial(getVidaInicial() + 10);
         setVidaActual(Math.min(getVidaActual() + 10, getVidaInicial()));
         setPoderGolpe(getPoderGolpe() + 3);
         
+        // (Opcional) pegar un poco más rápido: reduce levemente el tiempo de recarga
+        // setTiempoRecarga(Math.max(200, getTiempoRecarga() - 25));
 
         System.out.println(getNombre() + " subió al nivel " + getNivel());
     }
