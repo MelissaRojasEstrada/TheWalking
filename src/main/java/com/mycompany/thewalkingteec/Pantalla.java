@@ -210,49 +210,51 @@ public class Pantalla extends javax.swing.JFrame {
         return;
         }
         
-    int nivel = juego.getNivelActual();
-    for (int i = 1; i < nivel; i++) {
-        arma.subirNivel();  // usa tu override (+vida, +daño, +alcance, etc.)
+        int nivel = juego.getNivelActual();
+        for (int i = 1; i < nivel; i++) {
+            arma.subirNivel();  // para usar el iverride que está en las armas y así 
+        }
+
+        // Crear label 
+        ImageIcon icon = cargarIcono(iconPath);
+        JLabel lbl = (icon == null) ? new JLabel("🛡") : new JLabel(icon);
+        lbl.setBounds(columna * TAMANO_CASILLA, fila * TAMANO_CASILLA, TAMANO_CASILLA, TAMANO_CASILLA);
+        
+        configurarTooltipParaTropa(lbl, arma); 
+        
+        pnlJuego.add(lbl);
+        pnlJuego.revalidate();
+        pnlJuego.repaint();
+        armasVisuales.add(lbl);
+
+        // Posición en el modelo
+        arma.setFila(fila);
+        arma.setColumna(columna);
+
+        //Registrar en colecciones
+        defensas.add(arma);
+        defensaLabels.put(arma, lbl);
+        if (arma instanceof Arma a) {
+            a.setListaZombies(juego.getListaZombies());
+        }
+        juego.getListaDefensas().add(arma);
+        juego.getMatriz()[fila][columna] = arma;
+        actualizarHudNivelYEspacios();
+        if (juego.isBatallaEnCurso() && arma != null && !arma.isAlive()) {
+        arma.start(); // para que empiece a atacar de inmediato en plena batalla
+        }
+
+        arma.setRefLabel(lbl);        // para poder remover su JLabel al morir
+        arma.setRefPantalla(this);    // para llamar mostrarRIP/eliminarLabelDe desde Tropa.morir()
+        arma.setRefJuego(juego);      // para que Tropa.morir() pueda llamar juego.eliminarTropa(this)
+
+
+        if (arma.getVidaActual() <= 0) arma.setVidaActual(arma.getVidaInicial());
+        for (Zombies z : juego.getListaZombies()) {
+        z.marcarRecalculoObjetivo();
+        }
+
     }
-
-    // Crear label 
-    ImageIcon icon = cargarIcono(iconPath);
-    JLabel lbl = (icon == null) ? new JLabel("🛡") : new JLabel(icon);
-    lbl.setBounds(columna * TAMANO_CASILLA, fila * TAMANO_CASILLA, TAMANO_CASILLA, TAMANO_CASILLA);
-    
-    pnlJuego.add(lbl);
-    pnlJuego.revalidate();
-    pnlJuego.repaint();
-    armasVisuales.add(lbl);
-
-    // Posición en el modelo
-    arma.setFila(fila);
-    arma.setColumna(columna);
-
-    //Registrar en colecciones
-    defensas.add(arma);
-    defensaLabels.put(arma, lbl);
-    if (arma instanceof Arma a) {
-        a.setListaZombies(juego.getListaZombies());
-    }
-    juego.getListaDefensas().add(arma);
-    juego.getMatriz()[fila][columna] = arma;
-    actualizarHudNivelYEspacios();
-    if (juego.isBatallaEnCurso() && arma != null && !arma.isAlive()) {
-    arma.start(); // para que empiece a atacar de inmediato en plena batalla
-    }
-  
-    arma.setRefLabel(lbl);        // para poder remover su JLabel al morir
-    arma.setRefPantalla(this);    // para llamar mostrarRIP/eliminarLabelDe desde Tropa.morir()
-    arma.setRefJuego(juego);      // para que Tropa.morir() pueda llamar juego.eliminarTropa(this)
-
-
-    if (arma.getVidaActual() <= 0) arma.setVidaActual(arma.getVidaInicial());
-    for (Zombies z : juego.getListaZombies()) {
-    z.marcarRecalculoObjetivo();
-}
-    
-}
     
     private void colocarArmaAerea(int fila, int columna) {
         colocarArmaGenerica(new ArmaAerea(), "/images/arma_aerea.png", fila, columna);
@@ -308,7 +310,18 @@ public class Pantalla extends javax.swing.JFrame {
         }
         return total;
     }
-
+    
+    public void cerrarTodasLasVentanasInfo() {
+        java.awt.Window[] ventanas = java.awt.Window.getWindows();
+        for (java.awt.Window ventana : ventanas) {
+            if (ventana instanceof javax.swing.JDialog) {
+                javax.swing.JDialog dialogo = (javax.swing.JDialog) ventana;
+                if (dialogo.isUndecorated() && dialogo.isAlwaysOnTop()) {
+                    dialogo.dispose();
+                }
+            }
+        }
+    }
     private boolean hayEspacioPara(Defensa arma) {
         int limite = calcularLimiteCampos(juego.getNivelActual());
         return camposUsados() + arma.getCostoCampos() <= limite;
@@ -379,6 +392,7 @@ public class Pantalla extends javax.swing.JFrame {
         // Mostrar en el panel
         pnlJuego.add(lblArbol);
         pnlJuego.repaint();
+        
 
         // Crear el objeto ArbolDeLaVida y registrarlo en el juego
         ArbolDeLaVida nuevoArbol = new ArbolDeLaVida(fila, columna, lblArbol, this);
@@ -386,6 +400,7 @@ public class Pantalla extends javax.swing.JFrame {
 
         // Actualizar la juego.getMatriz() del juego
         juego.getMatriz()[fila][columna] = nuevoArbol;
+        configurarTooltipParaArbol(lblArbol, nuevoArbol);
     }
     
     public void actualizarPosicionTropa(Tropa tropa) {
@@ -494,6 +509,7 @@ public class Pantalla extends javax.swing.JFrame {
         zombie.adjuntarUI(this, lblZombie, TAMANO_CASILLA);
 
         zombieLabels.put(zombie, lblZombie);
+        configurarTooltipParaTropa(lblZombie, zombie);
     }
     
     public void mostrarRIP(Tropa tropa){
@@ -540,6 +556,7 @@ public class Pantalla extends javax.swing.JFrame {
     }
     
     public void resetearTableroCompleto() {
+        cerrarTodasLasVentanasInfo();
         //quitar todo lo visual
         pnlJuego.removeAll();
         pnlJuego.revalidate();
@@ -889,7 +906,158 @@ public class Pantalla extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-    
+   private void configurarTooltipParaTropa(javax.swing.JLabel label, Tropa tropa) {
+    label.addMouseListener(new java.awt.event.MouseAdapter() {
+        private javax.swing.JDialog ventanaInfo = null;
+        private javax.swing.Timer timer = null;
+        
+        @Override
+        public void mouseEntered(java.awt.event.MouseEvent evt) {
+            if (tropa != null && ventanaInfo == null) {
+                mostrarVentanaInfo(tropa, evt);
+            }
+        }
+        
+        @Override
+        public void mouseExited(java.awt.event.MouseEvent evt) {
+            cerrarVentanaInfo();
+        }
+        
+        private void mostrarVentanaInfo(Tropa tropa, java.awt.event.MouseEvent evt) {
+            ventanaInfo = new javax.swing.JDialog();
+            ventanaInfo.setUndecorated(true);
+            ventanaInfo.setAlwaysOnTop(true);
+            
+            javax.swing.JTextArea txtInfo = new javax.swing.JTextArea(construirInfoTropa(tropa));
+            txtInfo.setEditable(false);
+            txtInfo.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 11));
+            txtInfo.setBackground(new java.awt.Color(255, 255, 200));
+            txtInfo.setBorder(javax.swing.BorderFactory.createLineBorder(java.awt.Color.BLACK, 2));
+            txtInfo.setMargin(new java.awt.Insets(5, 5, 5, 5));
+            
+            ventanaInfo.add(txtInfo);
+            ventanaInfo.pack();
+            
+            java.awt.Point mousePos = evt.getLocationOnScreen();
+            ventanaInfo.setLocation(mousePos.x + 15, mousePos.y + 15);
+            
+            ventanaInfo.setVisible(true);
+            
+            // Timer que revisa cada 500ms si la tropa sigue viva
+            timer = new javax.swing.Timer(500, e -> {
+                if (tropa.getVidaActual() <= 0 || !label.isVisible()) {
+                    cerrarVentanaInfo();
+                }
+            });
+            timer.start();
+        }
+        
+            private void cerrarVentanaInfo() {
+                if (timer != null) {
+                    timer.stop();
+                    timer = null;
+                }
+                if (ventanaInfo != null) {
+                    ventanaInfo.dispose();
+                    ventanaInfo = null;
+                }
+            }
+        });
+    }
+
+    private String construirInfoTropa(Tropa tropa) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("╔══════════════════════════════════╗\n");
+        sb.append("  ").append(tropa.getNombre()).append("\n");
+        sb.append("╠══════════════════════════════════╣\n");
+        sb.append("  Posición: [").append(tropa.getFila()).append(",").append(tropa.getColumna()).append("]\n");
+        sb.append("  ────────────────────────────\n");
+        sb.append("  Vida: ").append(tropa.getVidaActual()).append(" / ").append(tropa.getVidaInicial()).append("\n");
+        sb.append("  Poder de golpe: ").append(tropa.getPoderGolpe()).append("\n");
+        sb.append("  Nivel: ").append(tropa.getNivel()).append("\n");
+        sb.append("  ────────────────────────────\n");
+
+        if (tropa.getAtaquesRealizados() != null) {
+            sb.append("  Ataques realizados: ").append(tropa.getAtaquesRealizados().size()).append("\n");
+        }
+        if (tropa.getAtaquesRecibidos() != null) {
+            sb.append("  Ataques recibidos: ").append(tropa.getAtaquesRecibidos().size()).append("\n");
+        }
+
+        // Info específica de armas
+        if (tropa instanceof Arma arma) {
+            sb.append("  ────────────────────────────\n");
+            sb.append("  Alcance: ").append(arma.getAlcance()).append("\n");
+        }
+
+        sb.append("╚══════════════════════════════════╝");
+        return sb.toString();
+    }
+    private void configurarTooltipParaArbol(javax.swing.JLabel labelArbol, ArbolDeLaVida arbol) {
+    labelArbol.addMouseListener(new java.awt.event.MouseAdapter() {
+        private javax.swing.JDialog ventanaInfo = null;
+        private javax.swing.Timer timer = null;
+        
+        @Override
+        public void mouseEntered(java.awt.event.MouseEvent evt) {
+            if (arbol != null && ventanaInfo == null) {
+                mostrarVentanaInfoArbol(arbol, evt);
+            }
+        }
+        
+        @Override
+        public void mouseExited(java.awt.event.MouseEvent evt) {
+            cerrarVentanaInfo();
+        }
+        
+        private void mostrarVentanaInfoArbol(ArbolDeLaVida arbol, java.awt.event.MouseEvent evt) {
+            ventanaInfo = new javax.swing.JDialog();
+            ventanaInfo.setUndecorated(true);
+            ventanaInfo.setAlwaysOnTop(true);
+            
+            String info = "╔══════════════════════════════════╗\n" +
+                         "    ÁRBOL DE LA VIDA  \n" +
+                         "╠══════════════════════════════════╣\n" +
+                         "  Vida: " + arbol.getVidaActual() + " / " + arbol.getVidaInicial() + "\n" +
+                         "  Ataques recibidos: " + (arbol.getAtaquesRecibidos() != null ? arbol.getAtaquesRecibidos().size() : 0) + "\n" +
+                         "╚══════════════════════════════════╝";
+            
+            javax.swing.JTextArea txtInfo = new javax.swing.JTextArea(info);
+            txtInfo.setEditable(false);
+            txtInfo.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 11));
+            txtInfo.setBackground(new java.awt.Color(200, 255, 200));
+            txtInfo.setBorder(javax.swing.BorderFactory.createLineBorder(java.awt.Color.BLACK, 2));
+            txtInfo.setMargin(new java.awt.Insets(5, 5, 5, 5));
+            
+            ventanaInfo.add(txtInfo);
+            ventanaInfo.pack();
+            
+            java.awt.Point mousePos = evt.getLocationOnScreen();
+            ventanaInfo.setLocation(mousePos.x + 15, mousePos.y + 15);
+            
+            ventanaInfo.setVisible(true);
+            
+            // Timer que revisa si el árbol sigue vivo
+            timer = new javax.swing.Timer(500, e -> {
+                if (arbol.getVidaActual() <= 0 || !labelArbol.isVisible()) {
+                    cerrarVentanaInfo();
+                }
+            });
+            timer.start();
+        }
+        
+            private void cerrarVentanaInfo() {
+                if (timer != null) {
+                    timer.stop();
+                    timer = null;
+                }
+                if (ventanaInfo != null) {
+                    ventanaInfo.dispose();
+                    ventanaInfo = null;
+                }
+            }
+        });
+    }
     private void btnStartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStartActionPerformed
        
      if (juego.isBatallaEnCurso()) {
