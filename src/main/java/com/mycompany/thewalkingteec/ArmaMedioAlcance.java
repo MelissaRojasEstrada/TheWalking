@@ -17,7 +17,7 @@ public class ArmaMedioAlcance extends Arma {
         setCostoCampos(1);
         setNombre("Arma de Mediano Alcance");
         setVidaInicial(50);
-        setAlcance(5);
+        setAlcance(5); // Puede atacar hasta 5 casillas de distancia (CORREGIDO de 11)
         setPoderGolpe(30);
         setGolpesPorSegundo(3);
         setTiempoRecarga(800); // Ataca cada 0.8 segundos
@@ -29,7 +29,11 @@ public class ArmaMedioAlcance extends Arma {
         this.velocidadProyectil = 10;
     }
     
-
+    /**
+     * Constructor con tipo de proyectil específico
+     * @param tipoProyectil
+     * @param alcance
+     */
     public ArmaMedioAlcance(String tipoProyectil, int alcance) {
         this();
         this.tipoProyectil = tipoProyectil;
@@ -62,14 +66,14 @@ public class ArmaMedioAlcance extends Arma {
     
     @Override
      public boolean zombieEnRango(Zombies zombie) {
-        if (zombie == null || zombie.getVidaActual() <= 0) return false; 
+        if (zombie == null || zombie.getVidaActual() <= 0) return false; // ← vidaActual
         double distancia = calcularDistanciaEuclidiana(zombie);
         return distancia <= getAlcance();
     }
     
     @Override
     public void atacarZombie(Zombies zombie) {
-        if (zombie == null || zombie.getVidaActual() <= 0) return; 
+        if (zombie == null || zombie.getVidaActual() <= 0) return;       // ← vidaActual
         if (!zombieEnRango(zombie)) {
             System.out.println(getNombre() + " no alcanza a " + zombie.getNombre() +
                     " (dist=" + String.format("%.1f", calcularDistanciaEuclidiana(zombie)) +
@@ -81,7 +85,8 @@ public class ArmaMedioAlcance extends Arma {
         int vidaRestante = zombie.recibirAtaque(dano);
         registrarAtaque(zombie, dano);
 
-        System.out.println(getNombre() + " disparó " + tipoProyectil + " a " + zombie.getNombre() + " causando " + dano + " de daño. Vida restante: " + vidaRestante);
+        System.out.println(getNombre() + " disparó " + tipoProyectil + " a " +
+                zombie.getNombre() + " causando " + dano + " de daño. Vida restante: " + vidaRestante);
     }
     
 
@@ -89,7 +94,7 @@ public class ArmaMedioAlcance extends Arma {
      public void subirNivel() {
         super.subirNivel(); // solo incrementa el nivel en Tropa
 
-
+        // Escalado incremental y razonable:
         setAlcance(getAlcance() + 1);                   // +1 rango
         setPoderGolpe(getPoderGolpe() + 4);             // +4 daño por nivel
         setVidaInicial(getVidaInicial() + 8);           // +8 vida máx
@@ -109,13 +114,16 @@ public class ArmaMedioAlcance extends Arma {
     
     @Override
      protected int calcularDano() {
-
+        // Daño por golpe: poder base + pequeño bonus por velocidad del proyectil
+        // (Arma.calcularDano ahora debería devolver poderGolpe; si no, ignóralo y usa getPoderGolpe())
         int danoBase = getPoderGolpe();
         int bonusVelocidad = Math.max(0, velocidadProyectil / 10); // p.ej. 10→+1, 20→+2
         return danoBase + bonusVelocidad;
     }
     
-
+    /**
+     * Cambia el tipo de munición, ajustando las propiedades
+     */
     public void cambiarMunicion(String nuevoTipo) {
         this.tipoProyectil = nuevoTipo;
         System.out.println(getNombre() + " cambió a munición " + nuevoTipo);
@@ -178,7 +186,8 @@ public class ArmaMedioAlcance extends Arma {
         // Registrar el ataque
         registrarAtaque(objetivoAAtacar, dano);
         
-        System.out.println("Arma [" + getFila() + "][" + getColumna() + "] atacó causando " + dano + " daño");
+        System.out.println("Arma [" + getFila() + "][" + getColumna() + 
+                         "] atacó causando " + dano + " daño");
     }
     
     

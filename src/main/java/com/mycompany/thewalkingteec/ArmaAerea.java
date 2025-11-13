@@ -43,7 +43,9 @@ public class ArmaAerea extends Arma {
         return distancia <= getAlcance();
     }
     
-
+    /**
+     * Mueve el drone hacia el zombie objetivo
+     */
     private void moverHaciaZombie(Zombies zombie) {
     if (zombie == null) return;
 
@@ -53,6 +55,7 @@ public class ArmaAerea extends Arma {
     int f0 = getFila();
     int c0 = getColumna();
 
+    // Paso simple de 1 casilla por eje (puedes escalar con velocidadMovimiento)
     if (this.getFila()    < filaObjetivo) this.setFila(this.getFila() + 1);
     else if (this.getFila() > filaObjetivo) this.setFila(this.getFila() - 1);
 
@@ -61,32 +64,32 @@ public class ArmaAerea extends Arma {
 
     System.out.println(getNombre() + " se movió a [" + getFila() + "," + getColumna() + "]");
 
-    //actualiza matriz
+    // ⇩ ACTUALIZA MATRIZ (modelo)
     if (getRefJuego() != null) {
         getRefJuego().reubicarDefensa(this, f0, c0, getFila(), getColumna());
     }
 
-    //actualiza pantalla
+    // ⇩ ACTUALIZA UI (label en pantalla)
     if (getRefPantalla() != null) {
         getRefPantalla().actualizarPosicionTropa(this);
     }
 }
     
     @Override
-    public void atacarZombie(Zombies zombie) {
-        if (zombie == null || zombie.getVidaActual() <= 0) return;
-        if (!zombieEnRango(zombie) && zombieDetectable(zombie)) {
-            moverHaciaZombie(zombie);
-            return;
-        }
-        if (zombieEnRango(zombie)) {
-            int dano = calcularDano();
-            int vidaRestante = zombie.recibirAtaque(dano);
-            registrarAtaque(zombie, dano);
-            System.out.println(getNombre() + " atacó desde el aire a " + zombie.getNombre()
-                + " causando " + dano + " de daño. Vida restante: " + vidaRestante);
-        }
+public void atacarZombie(Zombies zombie) {
+    if (zombie == null || zombie.getVidaActual() <= 0) return;
+    if (!zombieEnRango(zombie) && zombieDetectable(zombie)) {
+        moverHaciaZombie(zombie);
+        return;
     }
+    if (zombieEnRango(zombie)) {
+        int dano = calcularDano();               // ← ajusta esto según punto 2
+        int vidaRestante = zombie.recibirAtaque(dano);
+        registrarAtaque(zombie, dano);
+        System.out.println(getNombre() + " atacó desde el aire a " + zombie.getNombre()
+            + " causando " + dano + " de daño. Vida restante: " + vidaRestante);
+    }
+}
 
     @Override
     public void run() {

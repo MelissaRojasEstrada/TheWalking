@@ -50,7 +50,6 @@ public class Pantalla extends javax.swing.JFrame {
         toFront();
         requestFocus();
     }
-    
     public Pantalla(Juego juego) {
         this.juego = juego;
         initComponents();
@@ -74,7 +73,6 @@ public class Pantalla extends javax.swing.JFrame {
     public static final int TAMANO_MATRIZ = 25; // 25x25 celdas
     public static final int ANCHO_PANEL = TAMANO_CASILLA * TAMANO_MATRIZ;  // 1000px
     public static final int ALTO_PANEL = TAMANO_CASILLA * TAMANO_MATRIZ; // 1000px
-
    
     private enum ModoJuego {
         NORMAL,                         //No hace nada
@@ -86,7 +84,7 @@ public class Pantalla extends javax.swing.JFrame {
         COLOCANDO_BLOQUE  
     }
 
-    private ModoJuego modoActual = ModoJuego.NORMAL;
+   private ModoJuego modoActual = ModoJuego.NORMAL;
     private JLabel lblModoActual;
     
     private final List<JLabel> armasVisuales = new ArrayList<>();
@@ -130,7 +128,7 @@ public class Pantalla extends javax.swing.JFrame {
         return;
     }
 
-    //NO permitir colocar el Árbol durante la batalla
+    //No permitir colocar el Árbol durante la batalla
     if (juego.isBatallaEnCurso() && modoActual == ModoJuego.ARBOL) {
     JOptionPane.showMessageDialog(this, "No se puede colocar el Árbol durante la batalla.");
     return;
@@ -175,6 +173,7 @@ public class Pantalla extends javax.swing.JFrame {
         btnStart.setEnabled(!bloqueado);
     }
     
+    //Métodos privados de la clase 
     private ImageIcon cargarIcono(String ruta) {
         try {
           URL url = getClass().getResource(ruta);        
@@ -211,52 +210,49 @@ public class Pantalla extends javax.swing.JFrame {
         return;
         }
         
-        int nivel = juego.getNivelActual();
-        for (int i = 1; i < nivel; i++) {
-            arma.subirNivel();
-        }
-
-        // Crear label 
-        ImageIcon icon = cargarIcono(iconPath);
-        JLabel lbl = (icon == null) ? new JLabel("🛡") : new JLabel(icon);
-        lbl.setBounds(columna * TAMANO_CASILLA, fila * TAMANO_CASILLA, TAMANO_CASILLA, TAMANO_CASILLA);
-
-
-        pnlJuego.add(lbl);
-        pnlJuego.revalidate();
-        pnlJuego.repaint();
-        armasVisuales.add(lbl);
-
-        // Posición en el modelo
-        arma.setFila(fila);
-        arma.setColumna(columna);
-
-        //Registrar en colecciones
-        defensas.add(arma);
-        defensaLabels.put(arma, lbl);
-
-        if (arma instanceof Arma a) {
-            a.setListaZombies(juego.getListaZombies());
-        }
-    
-        juego.getListaDefensas().add(arma);
-        juego.getMatriz()[fila][columna] = arma;
-        actualizarHudNivelYEspacios();
-        if (juego.isBatallaEnCurso() && arma != null && !arma.isAlive()) {
-        arma.start(); // para que empiece a atacar de inmediato en plena batalla
-        }
-
-        arma.setRefLabel(lbl);        // para poder remover su JLabel al morir
-        arma.setRefPantalla(this);    // para llamar mostrarRIP/eliminarLabelDe desde Tropa.morir()
-        arma.setRefJuego(juego);      // para que Tropa.morir() pueda llamar juego.eliminarTropa(this)
-
-
-        if (arma.getVidaActual() <= 0) arma.setVidaActual(arma.getVidaInicial());
-        for (Zombies z : juego.getListaZombies()) {
-            z.marcarRecalculoObjetivo();
-        }
-    
+    int nivel = juego.getNivelActual();
+    for (int i = 1; i < nivel; i++) {
+        arma.subirNivel();  // usa tu override (+vida, +daño, +alcance, etc.)
     }
+
+    // Crear label 
+    ImageIcon icon = cargarIcono(iconPath);
+    JLabel lbl = (icon == null) ? new JLabel("🛡") : new JLabel(icon);
+    lbl.setBounds(columna * TAMANO_CASILLA, fila * TAMANO_CASILLA, TAMANO_CASILLA, TAMANO_CASILLA);
+    
+    pnlJuego.add(lbl);
+    pnlJuego.revalidate();
+    pnlJuego.repaint();
+    armasVisuales.add(lbl);
+
+    // Posición en el modelo
+    arma.setFila(fila);
+    arma.setColumna(columna);
+
+    //Registrar en colecciones
+    defensas.add(arma);
+    defensaLabels.put(arma, lbl);
+    if (arma instanceof Arma a) {
+        a.setListaZombies(juego.getListaZombies());
+    }
+    juego.getListaDefensas().add(arma);
+    juego.getMatriz()[fila][columna] = arma;
+    actualizarHudNivelYEspacios();
+    if (juego.isBatallaEnCurso() && arma != null && !arma.isAlive()) {
+    arma.start(); // para que empiece a atacar de inmediato en plena batalla
+    }
+  
+    arma.setRefLabel(lbl);        // para poder remover su JLabel al morir
+    arma.setRefPantalla(this);    // para llamar mostrarRIP/eliminarLabelDe desde Tropa.morir()
+    arma.setRefJuego(juego);      // para que Tropa.morir() pueda llamar juego.eliminarTropa(this)
+
+
+    if (arma.getVidaActual() <= 0) arma.setVidaActual(arma.getVidaInicial());
+    for (Zombies z : juego.getListaZombies()) {
+    z.marcarRecalculoObjetivo();
+}
+    
+}
     
     private void colocarArmaAerea(int fila, int columna) {
         colocarArmaGenerica(new ArmaAerea(), "/images/arma_aerea.png", fila, columna);
@@ -278,7 +274,6 @@ public class Pantalla extends javax.swing.JFrame {
     
     public void initPanelControles(){
     }
-    
     public static class PendingPlacement {
     public final ModoJuego type;
     public final int row;
@@ -291,15 +286,14 @@ public class Pantalla extends javax.swing.JFrame {
 }
     //Calcular los espacios por nivel, comenzando por 20 en el 1ero y aumentando 5 * nivel
     private int calcularLimiteCampos(int nivel) {
-        if (nivel < 1) nivel = 1;
-        if (nivel > 10) nivel = 10;
-        return 20 + (nivel - 1) * 5; // nivel 10 = 65
+    if (nivel < 1) nivel = 1;
+    if (nivel > 10) nivel = 10;
+    return 20 + (nivel - 1) * 5; // nivel 10 = 65
     }
-    
     public void setNivelActual(int nivel) {
-        int nivelClampeado = Math.max(1, Math.min(10, nivel));
-        juego.setNivelActual(nivelClampeado);
-        actualizarHudNivelYEspacios();
+    int nivelClampeado = Math.max(1, Math.min(10, nivel));
+    juego.setNivelActual(nivelClampeado);   // ← usa el SETTER, no el getter
+    actualizarHudNivelYEspacios();
     }
     
     private int camposUsados() {
@@ -314,7 +308,7 @@ public class Pantalla extends javax.swing.JFrame {
         }
         return total;
     }
-    
+
     private boolean hayEspacioPara(Defensa arma) {
         int limite = calcularLimiteCampos(juego.getNivelActual());
         return camposUsados() + arma.getCostoCampos() <= limite;
@@ -633,8 +627,6 @@ public class Pantalla extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(this, info.toString(), "Info del objeto", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -900,73 +892,72 @@ public class Pantalla extends javax.swing.JFrame {
     
     private void btnStartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStartActionPerformed
        
-        if (juego.isBatallaEnCurso()) {
-            JOptionPane.showMessageDialog(this, "La batalla ya está en curso.");
-            return;
-        }
-        if (!juego.hayDefensasReales()) {
-            JOptionPane.showMessageDialog(this, "Debes colocar al menos una defensa (además del Árbol) antes de iniciar");
-            return;
-        }
-        if (juego.getArbol() == null) {
-            JOptionPane.showMessageDialog(this, "Debes colocar el Árbol de la Vida antes de iniciar");
-            return;
-        }
-        for (Defensa d : juego.getListaDefensas()) {
-            if (d.isAlive()) d.interrupt();
-        }
-        for (Zombies z : juego.getListaZombies()) {
-            if (z.isAlive()) z.interrupt();
-        }
-        // Limpieza visual+modelo opcional al parar manualmente:
+     if (juego.isBatallaEnCurso()) {
+        JOptionPane.showMessageDialog(this, "La batalla ya está en curso.");
+        return;
+    }
+    if (!juego.hayDefensasReales()) {
+        JOptionPane.showMessageDialog(this, "Debes colocar al menos una defensa (además del Árbol) antes de iniciar");
+        return;
+    }
+    if (juego.getArbol() == null) {
+        JOptionPane.showMessageDialog(this, "Debes colocar el Árbol de la Vida antes de iniciar");
+        return;
+    }
+    for (Defensa d : juego.getListaDefensas()) {
+        if (d.isAlive()) d.interrupt();
+    }
+    for (Zombies z : juego.getListaZombies()) {
+        if (z.isAlive()) z.interrupt();
+    }
+    // Limpieza visual más el modelo al parar manualmente
 
-        modoActual = ModoJuego.NORMAL;
-        pnlJuego.setCursor(Cursor.getDefaultCursor());
-        juego.iniciarBatalla();
-        JOptionPane.showMessageDialog(this, "¡La batalla ha iniciado!");
-        
+    modoActual = ModoJuego.NORMAL;
+    pnlJuego.setCursor(Cursor.getDefaultCursor());
+    juego.iniciarBatalla();
+    JOptionPane.showMessageDialog(this, "¡La batalla ha iniciado!");
     }//GEN-LAST:event_btnStartActionPerformed
 
     private void btnPauseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPauseActionPerformed
-        if (!juego.isBatallaEnCurso()) {
+       if (!juego.isBatallaEnCurso()) {
         JOptionPane.showMessageDialog(this, "No hay batalla en curso.");
         return;
-        }
+    }
 
-        if (!juego.isPausado()) {
-            // Pausar
-            juego.pausar();
-            btnPause.setText("Resume");
-            setModoJuegoBloqueado(true);   // opcional: bloquea Start durante pausa
-            JOptionPane.showMessageDialog(this, "Batalla en pausa.");
-        } else {
-            // Reanudar
-            juego.reanudar();
-            btnPause.setText("Pause");
-            setModoJuegoBloqueado(false);
-            JOptionPane.showMessageDialog(this, "Batalla reanudada.");
-        }
+    if (!juego.isPausado()) {
+        // Pausar
+        juego.pausar();
+        btnPause.setText("Resume");
+        setModoJuegoBloqueado(true);   // opcional: bloquea Start durante pausa
+        JOptionPane.showMessageDialog(this, "Batalla en pausa.");
+    } else {
+        // Reanudar
+        juego.reanudar();
+        btnPause.setText("Pause");
+        setModoJuegoBloqueado(false);
+        JOptionPane.showMessageDialog(this, "Batalla reanudada.");
+    }
     }//GEN-LAST:event_btnPauseActionPerformed
 
     private void btnStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStopActionPerformed
-        if (!juego.isBatallaEnCurso()) {
+          if (!juego.isBatallaEnCurso()) {
         JOptionPane.showMessageDialog(this, "No hay batalla en curso.");
         return;
-        }
+    }
 
-        // Asegura salir de pausa
-        if (juego.isPausado()) {
-            juego.reanudar();
-            btnPause.setText("Pause");
-        }
+    // Asegura salir de pausa
+    if (juego.isPausado()) {
+        juego.reanudar();
+        btnPause.setText("Pause");
+    }
 
-        // Detener todo y limpiar la pantalla sin avanzar/reintentar
-        juego.detenerBatalla();
-        // Limpieza visual inmediata
-        resetearTableroCompleto();
+    //  todo y limpiar la pantalla sin avanzar/reintentar
+    juego.detenerBatalla();
+    // Limpieza visual inmediata
+    resetearTableroCompleto();
 
-        // No tocar nivel; solo dejar listo para recolocar
-        JOptionPane.showMessageDialog(this, "Batalla detenida. Puede rearmar su defensa y presionar Start.");
+    // No tocar nivel; solo dejamos listo para recolocar
+    JOptionPane.showMessageDialog(this, "Batalla detenida. Puede rearmar su defensa y presionar Start.");
 
     }//GEN-LAST:event_btnStopActionPerformed
 
@@ -976,29 +967,30 @@ public class Pantalla extends javax.swing.JFrame {
     }//GEN-LAST:event_btnAgregarArmaMedioAlcanceActionPerformed
 
     private void btnArmaContactoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnArmaContactoActionPerformed
-        modoActual = ModoJuego.COLOCANDO_ARMA_CONTACTO;
-        pnlJuego.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));   
+    modoActual = ModoJuego.COLOCANDO_ARMA_CONTACTO;
+    pnlJuego.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));   
     }//GEN-LAST:event_btnArmaContactoActionPerformed
 
     private void btnArmaMultipleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnArmaMultipleActionPerformed
-        modoActual = ModoJuego.COLOCANDO_ARMA_MULTIPLE;
-        pnlJuego.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+    modoActual = ModoJuego.COLOCANDO_ARMA_MULTIPLE;
+    pnlJuego.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }//GEN-LAST:event_btnArmaMultipleActionPerformed
 
     private void AgregarArmaAereaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AgregarArmaAereaActionPerformed
-        modoActual = ModoJuego.COLOCANDO_ARMA_AEREA;
-        pnlJuego.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+    modoActual = ModoJuego.COLOCANDO_ARMA_AEREA;
+    pnlJuego.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }//GEN-LAST:event_AgregarArmaAereaActionPerformed
 
     private void btnBloqueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBloqueActionPerformed
-        modoActual = ModoJuego.COLOCANDO_BLOQUE;   
-        pnlJuego.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+    modoActual = ModoJuego.COLOCANDO_BLOQUE;   
+    pnlJuego.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }//GEN-LAST:event_btnBloqueActionPerformed
 
     private void btnArbolDeLaVidaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnArbolDeLaVidaActionPerformed
         modoActual = ModoJuego.ARBOL;
         pnlJuego.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }//GEN-LAST:event_btnArbolDeLaVidaActionPerformed
+
 
     /**
      * @param args the command line arguments

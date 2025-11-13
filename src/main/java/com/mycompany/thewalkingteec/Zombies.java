@@ -18,157 +18,309 @@ import javax.swing.SwingUtilities;
  *
  * @author Alina
  */
-public abstract class Zombies extends Tropa implements Serializable {
+public abstract class Zombies extends Tropa implements Serializable{
     
-    private int velocidad;                      // Velocidad con la que el zombi se mueve por el campo
-    private Defensa objetivoActual;             // Defensa que el zombi tiene como objetivo
-    private transient Pantalla refPantalla;     // Referencia a la pantalla del juego (no se guarda al serializar)
-    private transient JLabel refLabel;          // Etiqueta visual del zombi en la interfaz
-    private int tamanoCasilla;                  // Tamaño de cada casilla del tablero
-    private static int contadorZombies = 0;     // Contador global para asignar IDs únicos
-    private volatile boolean needRecalc = false;// Marca si el zombi debe volver a buscar objetivo
-    private volatile boolean cancelado_ = false;// Indica si su hilo fue cancelado (por fin de batalla)
-    private volatile int battleIdSnapshot_ = -1;// Guarda el ID de la batalla donde se creó
+    private int velocidad; //velocidad a la que se mueve
+    private Defensa objetivoActual; //el objetivo más cercano para atacar
+    private transient Pantalla refPantalla; // si luego quieres usarla para otras cosas
+    private transient JLabel refLabel;      // referencia directa al JLabel del zombie
+    private int tamanoCasilla;              // tamaño de la celda recibido desde Pantalla
+    private static int contadorZombies = 0; //para generar nombres/id diferentes
+    private volatile boolean needRecalc = false;
+    private volatile boolean cancelado_ = false;
+    private volatile int battleIdSnapshot_ = -1;
+    
 
-    // CONSTRUCTOR
+
+
+
+    //CONSTRUCTOR
     public Zombies(String tipoZombie, int fila, int columna, int nivel, int vidaBase, int golpeBase, int golpesPorSeg, int alcanceBase) {
-        contadorZombies++;                                   // Genera un número único para el zombi
-        this.setNombre(tipoZombie + " #" + contadorZombies); // Asigna nombre con tipo + número
-        this.setFila(fila);                                  // Posición inicial
+        
+        contadorZombies++; //generar id
+        this.setNombre(tipoZombie + " #" + contadorZombies);
+        
+        this.setFila(fila);
         this.setColumna(columna);
-        this.setVidaInicial(vidaBase + (nivel * 10));        // Escala de vida según nivel
+
+        //caracteristicas por nivel
+        this.setVidaInicial(vidaBase + (nivel * 10));
         this.setVidaActual(vidaBase + (nivel * 10));
-        this.setPoderGolpe(golpeBase + (nivel * 2));         // Golpe aumenta con el nivel
+        this.setPoderGolpe(golpeBase + (nivel * 2));
         this.setGolpesPorSegundo(golpesPorSeg);
         this.setAlcance(alcanceBase);
         this.setNivelDeAparicion(nivel);
-        this.velocidad = 1000 / this.getGolpesPorSegundo();  // Entre más rápido golpea, más rápido se mueve
-        this.objetivoActual = null;                          // Sin objetivo inicial
+
+        this.velocidad = 1000 / this.getGolpesPorSegundo(); //entre mas golpes x segundo mas rapido se mueve
+        this.objetivoActual = null;
     }
     
-    public static void resetearContador() { contadorZombies = 0; } // Reinicia el contador global
+    //resetea el contador
+    public static void resetearContador() {
+        contadorZombies = 0;
+    }
     
-    public ArrayList<Defensa> listaDefensas = new ArrayList<>();    // Lista de todas las defensas activas
+    //TODO: ponerlo en otro lado
+    public ArrayList<Defensa> listaDefensas = new ArrayList<>(); //lista con todas las defensas
 
     public void adjuntarUI(Pantalla pantalla, JLabel label, int tamanoCasilla) {
-        this.refPantalla = pantalla;                       // Conecta el zombi con la interfaz
-        this.refLabel = label;                             // Guarda la etiqueta visual
-        this.tamanoCasilla = tamanoCasilla;                // Guarda el tamaño de cada celda
-    }
-
+    this.refPantalla = pantalla;
+    this.refLabel = label;
+    this.tamanoCasilla =tamanoCasilla ;
+     }
     @Override
-    public void run() {
-        tomarSnapshotBatalla();                            // Guarda el estado actual de la batalla
+public void run() {
+    // --- snapshot de la batalla actual ---
+    tomarSnapshotBatalla();
 
-        while (getVidaActual() > 0 && contextoBatallaVigente()) { // Corre mientras esté vivo y en batalla
-            Juego j = getRefJuego();
-            if (j != null) j.esperaSiPausado();            // Se detiene si el juego está en pausa
-
-            if (objetivoActual == null || objetivoActual.getVidaActual() <= 0) // Si no tiene objetivo o murió
-                objetivoActual = buscarObjetivo(listaDefensas);                // Busca uno nuevo
-
-            if (!contextoBatallaVigente()) break;
-
-            if (objetivoActual != null) {
-                boolean mismaCelda = (getFila() == objetivoActual.getFila() && getColumna() == objetivoActual.getColumna()); // Comprueba si ya está sobre su objetivo
-
-                if (!mismaCelda) {                         // Si no está, se mueve una casilla hacia él
-                    int f = getFila(), c = getColumna();
-                    if (c < objetivoActual.getColumna()) c++;
-                    else if (c > objetivoActual.getColumna()) c--;
-                    if (f < objetivoActual.getFila()) f++;
-                    else if (f > objetivoActual.getFila()) f--;
-                    setFila(f); setColumna(c);
-
-                    final int x = c * tamanoCasilla, y = f * tamanoCasilla; // Calcula nueva posición visual
-                    final JLabel lbl = refLabel;
-                    if (lbl != null)
-                        SwingUtilities.invokeLater(() -> { lbl.setLocation(x, y); lbl.repaint(); }); // Mueve el JLabel en la interfaz
-                } else {
-                    atacar(objetivoActual);                 // Si ya está encima, ataca
-                }
-            }
-
-            if (!contextoBatallaVigente()) break;
-            dormirCorto(velocidad);                        // Espera un momento antes del siguiente paso
-            if (Thread.currentThread().isInterrupted()) break;
+    while (getVidaActual() > 0 && contextoBatallaVigente()) {
+        Juego j = getRefJuego();
+        if(j != null) j.esperaSiPausado();
+        // 1) Buscar objetivo si no hay o murió
+        if (objetivoActual == null || objetivoActual.getVidaActual() <= 0) {
+            objetivoActual = buscarObjetivo(listaDefensas);
         }
 
-        if (getVidaActual() <= 0 && refPantalla != null)   // Si muere, muestra “RIP” en pantalla
-            SwingUtilities.invokeLater(() -> refPantalla.mostrarRIP(this));
+        if (!contextoBatallaVigente()) break;
+
+        if (objetivoActual != null) {
+            // ¿ya estoy en la misma celda que el objetivo?
+            boolean mismaCelda = (getFila() == objetivoActual.getFila() &&
+                                  getColumna() == objetivoActual.getColumna());
+
+            if (!mismaCelda) {
+                // --- MOVER UNA CASILLA HACIA EL OBJETIVO ---
+                int f = getFila();
+                int c = getColumna();
+
+                if (c < objetivoActual.getColumna()) c++;
+                else if (c > objetivoActual.getColumna()) c--;
+
+                if (f < objetivoActual.getFila()) f++;
+                else if (f > objetivoActual.getFila()) f--;
+
+                setFila(f);
+                setColumna(c);
+
+                // --- MOVER EL JLabel EN EL EDT, SIN Pantalla.moverZombie ---
+                final int x = c * tamanoCasilla;
+                final int y = f * tamanoCasilla;
+                final JLabel lbl = refLabel;
+                if (lbl != null) {
+                    SwingUtilities.invokeLater(() -> {
+                        lbl.setLocation(x, y);
+                        lbl.repaint();
+                    });
+                }
+            } else {
+                // --- ATACAR ---
+                atacar(objetivoActual);
+            }
+        }
+
+        if (!contextoBatallaVigente()) break;
+
+        // sleep corto con manejo de interrupción
+        dormirCorto(velocidad);
+        if (Thread.currentThread().isInterrupted() || !contextoBatallaVigente()) break;
     }
 
-    public void marcarRecalculoObjetivo() { needRecalc = true; } // Señala que debe buscar otro objetivo
+    // Al morir o al finalizar por fin de batalla, puedes mostrar RIP solo si realmente murió
+    if (getVidaActual() <= 0 && refPantalla != null) {
+        SwingUtilities.invokeLater(() -> refPantalla.mostrarRIP(this));
+    }
+}
 
+
+    public void marcarRecalculoObjetivo() { needRecalc = true; }
     @Override
-    public void atacar(Tropa objetivoAAtacar) {
-        if (objetivoAAtacar == null) return;               // No hace nada si no hay objetivo
-        if (objetivoAAtacar instanceof Zombies) return;    // Los zombis no atacan a otros zombis
-
-        int dano = this.getPoderGolpe();                   // Calcula el daño del golpe
+    public void atacar(Tropa objetivoAAtacar){
+        if (objetivoAAtacar == null) return; //validar que el objetivo exista
+        
+        if (objetivoAAtacar instanceof Zombies) return; //zombie no puede atacar a zombie
+        
+        int dano = this.getPoderGolpe();
         int vidaAntes = objetivoAAtacar.getVidaActual();
         objetivoAAtacar.recibirAtaque(dano);
         int vidaDespues = objetivoAAtacar.getVidaActual();
-
-        RegistroAtaques registro = new RegistroAtaques(this, objetivoAAtacar, dano, vidaAntes, vidaDespues); // Guarda el ataque en los registros
+        
+        //registrar el ataque en el atacante y el atacado
+        RegistroAtaques registro = new RegistroAtaques(this, objetivoAAtacar, dano, vidaAntes, vidaDespues);
         this.getAtaquesRealizados().add(registro);
         objetivoAAtacar.getAtaquesRecibidos().add(registro);
-
-        System.out.println(this.getNombre() + " atacó a " + objetivoAAtacar.getNombre() +
-                           " causando " + dano + " de daño. Vida restante: " + vidaDespues); // Mensaje en consola
+        
+        System.out.println(this.getNombre() + " atacó a " + objetivoAAtacar.getNombre() + 
+                          " causando " + dano + " de daño. Vida restante: " + vidaDespues);
     }
 
-    public Defensa buscarObjetivo(ArrayList<Defensa> listaDefensas) {
-        Defensa objetivoCercano = null; int menorDistancia = 50;   // Busca la defensa más cercana (50 es un límite alto)
-        if (listaDefensas == null || listaDefensas.isEmpty()) return null;
-        for (Defensa d : listaDefensas) {
-            if (d != null && d.getVidaActual() > 0 && !d.isEstaDestruida()) { // Solo defensas activas
-                int distancia = Math.abs(this.getFila() - d.getFila()) + Math.abs(this.getColumna() - d.getColumna());
-                if (distancia < menorDistancia) { menorDistancia = distancia; objetivoCercano = d; }
-            }
+    public Defensa buscarObjetivo(ArrayList<Defensa> listaDefensas){
+        Defensa objetivoCercano = null; //resetear el objetivo mas cercano
+        int menorDistancia = 50; //valor para iniciar a comparar las distancias (todas deben ser menor a 50 xq matriz es 25x25)
+        
+        if(listaDefensas == null || listaDefensas.isEmpty()) return null; //verificar que la lista se haya creado bien
+        
+        for(Defensa defensaActual: listaDefensas){ //evaluar para cada defensa
+            
+            // Verificar que la defensa esté viva
+            if(defensaActual != null && defensaActual.getVidaActual() > 0 && !defensaActual.isEstaDestruida()){
+                
+                int x = Math.abs(this.getFila() - defensaActual.getFila());
+                int y = Math.abs(this.getColumna()- defensaActual.getColumna());
+                
+                int distancia = x + y; //total de casillas a mover
+                
+                if(distancia < menorDistancia){
+                    menorDistancia = distancia;
+                    objetivoCercano = defensaActual;
+                }
+            }   
         }
-        return objetivoCercano;                              // Devuelve la defensa más cercana encontrada
+        
+        return objetivoCercano;
+        
     }
+    
+    public void moverHaciaObjetivo(Defensa objetivoALlegar){
+        
+        if(objetivoALlegar == null) return;
 
-    public void moverHaciaObjetivo(Defensa objetivoALlegar) {
-        if (objetivoALlegar == null) return;                 // Si no hay objetivo, no se mueve
-        final int filaAnterior = this.getFila(), columnaAnterior = this.getColumna();
+        // Guardar posición anterior
+        final int filaAnterior = this.getFila();
+        final int columnaAnterior = this.getColumna();
 
-        // Movimiento horizontal y vertical paso a paso
-        if (this.getColumna() < objetivoALlegar.getColumna()) setColumna(this.getColumna() + 1);
-        else if (this.getColumna() > objetivoALlegar.getColumna()) setColumna(this.getColumna() - 1);
-        if (this.getFila() < objetivoALlegar.getFila()) setFila(this.getFila() + 1);
-        else if (this.getFila() > objetivoALlegar.getFila()) setFila(this.getFila() - 1);
+        //mover horizontalmente
+        if (this.getColumna() < objetivoALlegar.getColumna()) {
+            setColumna(this.getColumna() + 1);
+        } else if (this.getColumna() > objetivoALlegar.getColumna()) {
+            setColumna(this.getColumna() - 1);
+        }
 
-        // Actualiza la posición visual solo si se movió realmente
-        if (refPantalla != null && (filaAnterior != this.getFila() || columnaAnterior != this.getColumna()))
-            SwingUtilities.invokeLater(() -> refPantalla.actualizarPosicionTropa(this));
+        //mover verticalmente
+        if (this.getFila() < objetivoALlegar.getFila()) {
+            setFila(this.getFila() + 1);
+        } else if (this.getFila() > objetivoALlegar.getFila()) {
+            setFila(this.getFila() - 1);
+        }
+        
+        // Actualizar UI solo si la posición cambió y hay referencia a pantalla
+        // Usar SwingUtilities.invokeLater para thread-safety
+        if (refPantalla != null && (filaAnterior != this.getFila() || columnaAnterior != this.getColumna())) {
+            SwingUtilities.invokeLater(() -> {
+                refPantalla.actualizarPosicionTropa(this);
+            });
+        }
     }
-
-    protected final void tomarSnapshotBatalla() {            // Guarda el estado actual de la batalla
-        Juego j = getRefJuego();
-        battleIdSnapshot_ = (j != null ? j.getBatallaId() : -1);
-        cancelado_ = false;
-    }
-
-    public final void cancelarPorFinDeBatalla() {            // Detiene al zombi cuando la batalla termina
-        cancelado_ = true;
-        interrupt();
-    }
-
-    protected final boolean contextoBatallaVigente() {       // Comprueba si el zombi sigue en la misma batalla
-        Juego j = getRefJuego();
-        return !cancelado_ && j != null && j.getBatallaId() == battleIdSnapshot_;
-    }
-
-    protected final void dormirCorto(long ms) {              // Pequeña pausa entre acciones
-        try { Thread.sleep(ms); }
-        catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
-    }
-
-    public abstract boolean puedeAtacar(Defensa objetivoActual); // Cada tipo define sus condiciones de ataque
-
-    // --- Getters y Setters (sin comentarios porque ya son claros) ---
+    protected final void tomarSnapshotBatalla() {
+    Juego j = getRefJuego();
+    battleIdSnapshot_ = (j != null ? j.getBatallaId() : -1);
+    cancelado_ = false;
 }
+
+public final void cancelarPorFinDeBatalla() {
+    cancelado_ = true;
+    interrupt(); // despierta si está durmiendo
+}
+
+protected final boolean contextoBatallaVigente() {
+    Juego j = getRefJuego();
+    return !cancelado_ && j != null && j.getBatallaId() == battleIdSnapshot_;
+}
+
+protected final void dormirCorto(long ms) {
+    try { Thread.sleep(ms); }
+    catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+}
+    public abstract boolean puedeAtacar(Defensa objetivoActual); //según su tipo y rango
+
+    
+    //GETTERS
+    public int getVelocidad() {
+        return velocidad;
+    }
+
+    public Defensa getObjetivoActual() {
+        return objetivoActual;
+    }
+
+    public static int getContadorZombies() {
+        return contadorZombies;
+    }
+    
+    public Pantalla getRefPantalla() {
+        return refPantalla;
+    }
+
+    public int getTamanoCasilla() {
+        return tamanoCasilla;
+    }
+
+    public void setTamanoCasilla(int tamanoCasilla) {
+        this.tamanoCasilla = tamanoCasilla;
+    }
+
+    public JLabel getRefLabel() {
+        return refLabel;
+    }
+
+    public void setRefLabel(JLabel refLabel) {
+        this.refLabel = refLabel;
+    }
+
+    public boolean isNeedRecalc() {
+        return needRecalc;
+    }
+
+    public void setNeedRecalc(boolean needRecalc) {
+        this.needRecalc = needRecalc;
+    }
+
+    public boolean isCancelado_() {
+        return cancelado_;
+    }
+
+    public void setCancelado_(boolean cancelado_) {
+        this.cancelado_ = cancelado_;
+    }
+
+    public int getBattleIdSnapshot_() {
+        return battleIdSnapshot_;
+    }
+
+    public void setBattleIdSnapshot_(int battleIdSnapshot_) {
+        this.battleIdSnapshot_ = battleIdSnapshot_;
+    }
+
+    public ArrayList<Defensa> getListaDefensas() {
+        return listaDefensas;
+    }
+
+    public void setListaDefensas(ArrayList<Defensa> listaDefensas) {
+        this.listaDefensas = listaDefensas;
+    }
+
+
+    //setters
+    public void setVelocidad(int velocidad) {
+        this.velocidad = velocidad;
+    }
+
+    public void setObjetivoActual(Defensa objetivoActual) {
+        this.objetivoActual = objetivoActual;
+    }
+
+    public static void setContadorZombies(int contadorZombies) {
+        Zombies.contadorZombies = contadorZombies;
+    }
+    
+    public void setRefPantalla(Pantalla refPantalla) {
+        this.refPantalla = refPantalla;
+    }
+}
+
+
+
+
+
+    
 
     

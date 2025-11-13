@@ -47,12 +47,14 @@ public class ArmaAtaqueMultiple extends Arma {
     
     @Override
     public boolean zombieEnRango(Zombies zombie) {
-        if (zombie == null || zombie.getVidaActual() <= 0) return false;
+        if (zombie == null || zombie.getVidaActual() <= 0) return false;   // ← vidaActual
         double distancia = calcularDistanciaEuclidiana(zombie);
         return distancia <= getAlcance();
     }
 
-
+    /**
+     * Busca los N zombies más cercanos para atacar simultáneamente
+     */
     private List<Zombies> buscarObjetivosMultiples() {
         List<Zombies> objetivos = new ArrayList<>();
         if (getListaZombies() == null || getListaZombies().isEmpty()) return objetivos;
@@ -60,7 +62,7 @@ public class ArmaAtaqueMultiple extends Arma {
         // Filtrar por vivos y en rango
         List<Zombies> zombiesEnRango = new ArrayList<>();
         for (Zombies zombie : getListaZombies()) {
-            if (zombie != null && zombie.getVidaActual() > 0 && zombieEnRango(zombie)) { 
+            if (zombie != null && zombie.getVidaActual() > 0 && zombieEnRango(zombie)) {  // ← vidaActual
                 zombiesEnRango.add(zombie);
             }
         }
@@ -84,20 +86,23 @@ public class ArmaAtaqueMultiple extends Arma {
     
     @Override
     public void atacarZombie(Zombies zombie) {
-
+        // Mantén compatibilidad, pero usa el múltiple internamente
         List<Zombies> objetivos = new ArrayList<>();
-        if (zombie != null && zombie.getVidaActual() > 0 && zombieEnRango(zombie)) {
+        if (zombie != null && zombie.getVidaActual() > 0 && zombieEnRango(zombie)) {  // ← vidaActual
             objetivos.add(zombie);
         }
         atacarMultiple(objetivos);
     }
 
     
-
+    /**
+     * Ataca a múltiples zombies simultáneamente
+     * @param objetivos o zoombies
+     */
     public void atacarMultiple(List<Zombies> objetivos) {
         if (objetivos == null || objetivos.isEmpty()) return;
 
-        // daño por proyectil 
+        // daño por proyectil (calcularDano() debe devolver solo poderGolpe)
         int dano = calcularDano();
 
         System.out.println(getNombre() + " lanza una ráfaga de " + objetivos.size() + " " + tipoProyectil + "(s):");
@@ -108,7 +113,9 @@ public class ArmaAtaqueMultiple extends Arma {
                 int vidaRestante = zombie.recibirAtaque(dano);
                 registrarAtaque(zombie, dano);
                 impactosExitosos++;
-                System.out.println("  - " + tipoProyectil + " #" + impactosExitosos + " impactó a " + zombie.getNombre() + " causando " + dano + " de daño. Vida restante: " + vidaRestante);
+                System.out.println("  - " + tipoProyectil + " #" + impactosExitosos +
+                        " impactó a " + zombie.getNombre() +
+                        " causando " + dano + " de daño. Vida restante: " + vidaRestante);
             }
         }
 
@@ -119,11 +126,11 @@ public class ArmaAtaqueMultiple extends Arma {
 
     @Override
     public void run() {
-        while (getVidaActual() > 0 && !isEstaDestruida()) {
+        while (getVidaActual() > 0 && !isEstaDestruida()) {             // ← vidaActual
             List<Zombies> objetivos = buscarObjetivosMultiples();
             if (!objetivos.isEmpty() && puedeDispararAhora()) {
                 atacarMultiple(objetivos);
-                registrarDisparo();
+                registrarDisparo(); // controla cooldown + munición
             }
             try { Thread.sleep(100); } catch (InterruptedException e) { break; }
         }
@@ -131,7 +138,7 @@ public class ArmaAtaqueMultiple extends Arma {
 
     @Override
     public void subirNivel() {
-        super.subirNivel(); // sube el nivel
+        super.subirNivel(); // sube el nivel (sin tocar stats en Arma)
         // Incrementos por nivel (ajústalos si escalan demasiado)
         setVidaInicial(getVidaInicial() + 10);
         setVidaActual(Math.min(getVidaActual() + 10, getVidaInicial()));
@@ -146,16 +153,22 @@ public class ArmaAtaqueMultiple extends Arma {
 
     @Override
     protected int calcularDano() {
+        // Daño por proyectil (la cadencia la maneja tiempoRecarga)
         return getPoderGolpe();
     }
     
-
+    /**
+     * Mejora el arma aumentando el número de proyectiles
+     */
     public void mejorarCapacidad(int proyectilesExtra) {
         this.numeroProyectiles += proyectilesExtra;
-        System.out.println(getNombre() + " mejoró su capacidad. Nuevos proyectiles: " +  numeroProyectiles);
+        System.out.println(getNombre() + " mejoró su capacidad. Nuevos proyectiles: " + 
+                          numeroProyectiles);
     }
     
-
+    /**
+     * Muestra estadísticas del arma
+     */
     public void mostrarEstadisticas() {
         System.out.println("=== Estadísticas de " + getNombre() + " ===");
         System.out.println("Nivel: " + getNivel());

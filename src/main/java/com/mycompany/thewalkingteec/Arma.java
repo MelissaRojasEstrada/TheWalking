@@ -31,7 +31,9 @@ public abstract class Arma extends Defensa {
         this.listaZombies = new ArrayList<>();
     }
     
-
+    /**
+     * Implementación del método abstracto de Defensa
+     */
     @Override
     public boolean objetivoEnRango(Zombies objetivo) {
         if(objetivo == null) {
@@ -41,14 +43,18 @@ public abstract class Arma extends Defensa {
     }
      
     public boolean puedeDispararAhora() {
-
+        /**
+         * Verifica si el arma puede atacar según el tiempo de recarga
+         */
         long tiempoActual = System.currentTimeMillis();
         return puedeAtacar && (tiempoActual - ultimoAtaque >= tiempoRecarga) 
                && (municiones != 0) && !isEstaDestruida();
     }
     
     protected void registrarDisparo() {
-
+        /**
+         * Actualiza el tiempo del último ataque
+         */
         this.ultimoAtaque = System.currentTimeMillis();
         if (municiones > 0) {
             municiones--;
@@ -56,12 +62,16 @@ public abstract class Arma extends Defensa {
     }
     
     protected int calcularDano() {
-
+        /**
+         * Calcula el daño que hace esta arma
+         */
         return getPoderGolpe();
     }
     
     public Zombies buscarZombieCercano() {
-
+        /**
+         * Busca el zombie más cercano
+         */
         Zombies objetivoCercano = null;
         int menorDistancia = Integer.MAX_VALUE;
         
@@ -82,7 +92,9 @@ public abstract class Arma extends Defensa {
         return objetivoCercano;
     }
     
-
+    /**
+     * Busca el zombie + cercano
+     */
     @Override
     public Zombies buscarObjetivoCercano(List<Zombies> zombies) {
         // Usar temporalmente la lista proporcionada
@@ -105,7 +117,9 @@ public abstract class Arma extends Defensa {
         return Math.sqrt(deltaFila * deltaFila + deltaColumna * deltaColumna);
     }
     
-
+    /**
+     * verifica si un zombie está en rango
+     */
     public abstract boolean zombieEnRango(Zombies zombie);
     
     @Override
@@ -118,7 +132,9 @@ public abstract class Arma extends Defensa {
         atacarZombie(zombie);
     }
     
-
+    /**
+     * Cada arma implementa según su tipo de ataque
+     */
     public abstract void atacarZombie(Zombies zombie);
     @Override
     public void run() {
@@ -140,7 +156,9 @@ public abstract class Arma extends Defensa {
     }
 }
     
-
+    /**
+     * Calcula la distancia entre esta arma y un objetivo
+     */
     protected double calcularDistancia(Tropa objetivo) {
         int deltaFila = this.getFila() - objetivo.getFila();
         int deltaColumna = this.getColumna() - objetivo.getColumna();
