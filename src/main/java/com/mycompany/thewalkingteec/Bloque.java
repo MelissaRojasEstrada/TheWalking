@@ -12,10 +12,10 @@ public class Bloque extends Defensa {
     
     public Bloque() {
         super();
-        // Configurar propiedades específicas de bloque
+        // q propiedades le doy al bloque 
         setCostoCampos(1);
         setNombre("Bloque");
-        setVidaInicial(250); // Bloques tienen mucha vida
+        setVidaInicial(250); // mucha vidaa
         setVidaActual(250);
         setPoderGolpe(0); // No atacan
         setGolpesPorSegundo(0);
@@ -33,7 +33,7 @@ public class Bloque extends Defensa {
         this.resistenciaExtra = resistenciaExtra;
         setNombre("Bloque de " + tipoMaterial);
         
-        // Ajustar vida según material
+        //  vida según material
         switch(tipoMaterial.toLowerCase()) {
             case "madera":
                 setVidaInicial(500);
@@ -54,7 +54,7 @@ public class Bloque extends Defensa {
     
     @Override
     public void atacar(Tropa objetivoAAtacar) {
-        // NO atacan, solo defienden
+        // No atacan, solo defienden
     }
     
     @Override
@@ -75,7 +75,7 @@ public class Bloque extends Defensa {
         // Solo barrera
         while(getVidaInicial() > 0 && !isEstaDestruida()) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(1000);//1 s para verificar si sigue vivo
             } catch (InterruptedException e) {
                 break;
             }
@@ -87,7 +87,8 @@ public class Bloque extends Defensa {
     
     @Override
     public int recibirAtaque(int golpesPorSegundo) {
-        // Los bloques tienen resistencia extra
+        
+        // Reduce el daño recibido según resistencia
         int danoReducido = Math.max(1, golpesPorSegundo - resistenciaExtra);
         
         System.out.println(getNombre() + " recibió " + golpesPorSegundo + 
@@ -111,7 +112,7 @@ public class Bloque extends Defensa {
         // Al subir nivel, aumenta vida y resistencia
         setVidaInicial(getVidaInicial() + 100);
         setVidaActual(getVidaInicial()); // Vida actual = vida inicial después de subir
-        resistenciaExtra += 5;
+        resistenciaExtra += 2;
 
         System.out.println(getNombre() + " subió al nivel " + getNivel() + 
                           ". Nueva vida: " + getVidaActual() + 

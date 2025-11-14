@@ -19,7 +19,7 @@ public abstract class Arma extends Defensa {
     private volatile Zombies objetivoActual; // la variable puede ser modificada
     private List<Zombies> listaZombies; 
     private volatile boolean cancelado_ = false;
-    private volatile int battleIdSnapshot_ = -1;
+    private volatile int battleIdSnapshot_ = -1; //en -1 pq indica q el zombie no ha participado en la batalla 
     
     public Arma() {
         super();
@@ -80,7 +80,7 @@ public abstract class Arma extends Defensa {
         }
         
         for (Zombies zombie : listaZombies) {
-            if (zombie != null && zombie.isAlive() && zombie.getVidaActual() > 0) { // ← aquí
+            if (zombie != null && zombie.isAlive() && zombie.getVidaActual() > 0) { 
                 int distancia = calcularDistanciaManhattan(zombie);
                 if (distancia < menorDistancia) {
                     menorDistancia = distancia;
@@ -97,20 +97,22 @@ public abstract class Arma extends Defensa {
      */
     @Override
     public Zombies buscarObjetivoCercano(List<Zombies> zombies) {
-        // Usar temporalmente la lista proporcionada
+        // cambia temporalmente la lista proporcionada
         List<Zombies> listaOriginal = this.listaZombies;
-        this.listaZombies = zombies;
+        this.listaZombies = zombies; // usa la lista pasada como parámetro
         Zombies resultado = buscarZombieCercano();
-        this.listaZombies = listaOriginal;
+        this.listaZombies = listaOriginal; // restaura la original
         return resultado;
     }
     
+    //calcula la distancia que hay entre casillas 
     private int calcularDistanciaManhattan(Zombies zombie) {
         int x = Math.abs(this.getFila() - zombie.getFila());
         int y = Math.abs(this.getColumna() - zombie.getColumna());
         return x + y;     
     }
     
+    //calcula la distacia real o la diagonal
     protected double calcularDistanciaEuclidiana(Zombies objetivo) {
         int deltaFila = this.getFila() - objetivo.getFila();
         int deltaColumna = this.getColumna() - objetivo.getColumna();
@@ -138,12 +140,17 @@ public abstract class Arma extends Defensa {
     public abstract void atacarZombie(Zombies zombie);
     @Override
     public void run() {
-        while (getVidaActual() > 0 && !isEstaDestruida()) { // ← aquí
+        while (getVidaActual() > 0 && !isEstaDestruida()) {
+            
+            //Pausa el juego si se presiona el botón 
             Juego j = getRefJuego();
             if (j != null) j.esperaSiPausado();
-            if (objetivoActual == null || objetivoActual.getVidaActual() <= 0 || !objetivoActual.isAlive()) { // ← aquí
+            
+            //busca objetivo si no hay o si muri+o
+            if (objetivoActual == null || objetivoActual.getVidaActual() <= 0 || !objetivoActual.isAlive()) { 
                 objetivoActual = buscarZombieCercano();
-        }
+            }
+            //si hay objetivo atacar si está en rango
             if (objetivoActual != null) {
             if (zombieEnRango(objetivoActual)) {
                 if (puedeDispararAhora()) {
@@ -151,7 +158,7 @@ public abstract class Arma extends Defensa {
                     registrarDisparo();
                 }
             }
-        }
+        } //dormir 100m antes de la sig iteración para q el cpu descanse alguito
         try { Thread.sleep(100); } catch (InterruptedException e) { break; }
     }
 }

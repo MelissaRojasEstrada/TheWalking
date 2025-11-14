@@ -13,7 +13,6 @@ import java.util.List;
 public abstract class Defensa extends Tropa {
     private boolean estaDestruida; //si está dañada o no 
     private int costoCampos;
-    private int costoRecursos; //recursos que cuentas
     
     public Defensa() {
         this.estaDestruida = false;
@@ -35,7 +34,7 @@ public abstract class Defensa extends Tropa {
      * @param zombies Lista de zombies a defender contra
      * Verifica q la defensa no esté destruida
      * Busca el zombie más cercano
-     * Si lo encuentra y está en rango, lo ataca defendiendo?
+     * Si lo encuentra y está en rango, lo ataca defendiendo
      */
     public void defender(List<Zombies> zombies) {
         if (!estaDestruida && getVidaInicial() > 0) {
@@ -74,14 +73,6 @@ public abstract class Defensa extends Tropa {
 
     public void setEstaDestruida(boolean estaDestruida) {
         this.estaDestruida = estaDestruida;
-    }
-
-    public int getCostoRecursos() {
-        return costoRecursos;
-    }
-
-    public void setCostoRecursos(int costoRecursos) {
-        this.costoRecursos = costoRecursos;
-    }  
+    } 
 }
 

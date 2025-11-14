@@ -17,7 +17,7 @@ import javax.swing.JOptionPane;
 
 /**
  *
- * @author Alina
+ * @author Alina y melissa
  */
 public class Pantalla extends javax.swing.JFrame {
 
@@ -61,7 +61,7 @@ public class Pantalla extends javax.swing.JFrame {
     }
      
     private void prepararPanelJuego() {
-        // Para usar setBounds(x,y,w,h) en los labels de zombies/armas
+        // Para usar setBounds(x,y,w,h) en los labels de todas las tropas que hayan 
         pnlJuego.setLayout(null);
         pnlJuego.setPreferredSize(new java.awt.Dimension(ANCHO_PANEL, ALTO_PANEL)); // 1000 x 1000
         pnlJuego.setBackground(new java.awt.Color(51, 102, 0));
@@ -245,7 +245,7 @@ public class Pantalla extends javax.swing.JFrame {
         }
 
         arma.setRefLabel(lbl);        // para poder remover su JLabel al morir
-        arma.setRefPantalla(this);    // para llamar mostrarRIP/eliminarLabelDe desde Tropa.morir()
+        arma.setRefPantalla(this);    
         arma.setRefJuego(juego);      // para que Tropa.morir() pueda llamar juego.eliminarTropa(this)
 
 
@@ -294,7 +294,7 @@ public class Pantalla extends javax.swing.JFrame {
     }
     public void setNivelActual(int nivel) {
     int nivelClampeado = Math.max(1, Math.min(10, nivel));
-    juego.setNivelActual(nivelClampeado);   // ← usa el SETTER, no el getter
+    juego.setNivelActual(nivelClampeado);   
     actualizarHudNivelYEspacios();
     }
     
@@ -398,7 +398,7 @@ public class Pantalla extends javax.swing.JFrame {
         ArbolDeLaVida nuevoArbol = new ArbolDeLaVida(fila, columna, lblArbol, this);
         juego.setArbol(nuevoArbol);
 
-        // Actualizar la juego.getMatriz() del juego
+        // Actualizar la matriz que haya en juego 
         juego.getMatriz()[fila][columna] = nuevoArbol;
         configurarTooltipParaArbol(lblArbol, nuevoArbol);
     }
@@ -562,14 +562,14 @@ public class Pantalla extends javax.swing.JFrame {
         pnlJuego.revalidate();
         pnlJuego.repaint();
 
-        //Limpiar referencias de UI
+        //Limpiar referencias de UI y así, para que quede vacío 
         defensaLabels.clear();
         zombieLabels.clear();
         armasVisuales.clear();
         defensas.clear();
         lblArbol = null;
 
-        //Estado local
+        //se coloca el estado para comenzar nuevamente
         batallaIniciada = false;
         modoActual = ModoJuego.NORMAL;
         pnlJuego.setCursor(Cursor.getDefaultCursor());
@@ -580,7 +580,7 @@ public class Pantalla extends javax.swing.JFrame {
     public void redibujarDefensasYArbol(Juego j) {
         resetearTableroCompleto();
 
-        // Árbol vivo (si existe)
+        // Árbol vivo si es q existe 
         if (j.getArbol() != null) {
             ImageIcon iconoArbol = cargarIcono("/Images/ArbolVivo.png");
             lblArbol = new JLabel(iconoArbol);

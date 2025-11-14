@@ -19,8 +19,9 @@ import java.util.Random;
 import javax.swing.JOptionPane;
 
 public class Juego implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+    
+    //básicamente identifica la versión del código 
+    private static final long serialVersionUID = 1L;// por si cambiamos de clase y queremos cargar una partida vieja  
 
     // info del jugador y partida
     private String nombreJugador;
@@ -28,7 +29,10 @@ public class Juego implements Serializable {
     private int espaciosEjercitoDisponibles;
     private boolean juegoTerminado;
     private boolean batallaEnCurso;
-    private final Object finLock = new Object();
+    private final Object finLock = new Object(); //para sincronizar (usamos métodos sincronized)los threads cuando la batalla termina
+    //final para que todos los threads cuando la batalla termina 
+    
+    
     private boolean finProcesado = false;
     private volatile boolean limpiezaHecha = false;
     private volatile int battleId = 0;
@@ -37,8 +41,8 @@ public class Juego implements Serializable {
     private volatile int batallaId = 0;
     private ArrayList<TropaResumen> ultimoResumenDefensas = new ArrayList<>();
     private ArrayList<TropaResumen> ultimoResumenZombies  = new ArrayList<>();
-    private volatile boolean pausado = false;
-    private final Object pauseLock = new Object();
+    private volatile boolean pausado = false; // Todos los threads ven si hay pausa inmediatamente
+    private final Object pauseLock = new Object(); //nunca cambia de referencia , por eso el final 
     
     
     // objetos del juego
@@ -54,7 +58,7 @@ public class Juego implements Serializable {
     private static final int NIVELES_TOTALES = 10;
     private static final int TAMANO_MATRIZ = 25;
 
-    // CONSTRUCTOR
+    // Cosntructor 
     public Juego(String nombreJugador) {
         this.nombreJugador = nombreJugador;
         this.nivelActual = 1;

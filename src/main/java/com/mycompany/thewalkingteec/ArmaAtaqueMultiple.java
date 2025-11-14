@@ -33,7 +33,7 @@ public class ArmaAtaqueMultiple extends Arma {
     }
     
     /**
-     * Constructor con configuración personalizada
+     * Constructor 
      * @param nombre
      * @param numeroProyectiles
      * @param tipoProyectil
@@ -53,7 +53,7 @@ public class ArmaAtaqueMultiple extends Arma {
     }
 
     /**
-     * Busca los N zombies más cercanos para atacar simultáneamente
+     * Busca los n zombies más cercanos para atacar simultáneamente
      */
     private List<Zombies> buscarObjetivosMultiples() {
         List<Zombies> objetivos = new ArrayList<>();
@@ -126,11 +126,11 @@ public class ArmaAtaqueMultiple extends Arma {
 
     @Override
     public void run() {
-        while (getVidaActual() > 0 && !isEstaDestruida()) {             // ← vidaActual
+        while (getVidaActual() > 0 && !isEstaDestruida()) {           
             List<Zombies> objetivos = buscarObjetivosMultiples();
             if (!objetivos.isEmpty() && puedeDispararAhora()) {
                 atacarMultiple(objetivos);
-                registrarDisparo(); // controla cooldown + munición
+                registrarDisparo(); 
             }
             try { Thread.sleep(100); } catch (InterruptedException e) { break; }
         }
@@ -139,12 +139,11 @@ public class ArmaAtaqueMultiple extends Arma {
     @Override
     public void subirNivel() {
         super.subirNivel(); // sube el nivel (sin tocar stats en Arma)
-        // Incrementos por nivel (ajústalos si escalan demasiado)
         setVidaInicial(getVidaInicial() + 10);
         setVidaActual(Math.min(getVidaActual() + 10, getVidaInicial()));
         setPoderGolpe(getPoderGolpe() + 2);   // daño por proyectil
         setAlcance(getAlcance() + 1);
-        numeroProyectiles++;                  // si escala demasiado, subilo cada 2 niveles
+        numeroProyectiles++;              
 
         System.out.println(getNombre() + " subió al nivel " + getNivel() +
                 ". Proyectiles por ráfaga: " + numeroProyectiles +

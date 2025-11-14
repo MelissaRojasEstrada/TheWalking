@@ -15,7 +15,6 @@ public class ZombieMedianoAlcance extends Zombies{
         super("Zombie Francotirador", fila, columna, nivel, 40, 15, 1, 3 + (nivel / 2));
     }
 
-    //TODO: pensar bien el algoritmo 
     @Override
     public boolean puedeAtacar(Defensa objetivoActual) {
 

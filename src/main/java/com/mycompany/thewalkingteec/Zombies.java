@@ -9,7 +9,6 @@ package com.mycompany.thewalkingteec;
  * @author melissa
  */
 import java.util.ArrayList;
-import java.util.List;
 import java.io.Serializable;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
@@ -22,7 +21,7 @@ public abstract class Zombies extends Tropa implements Serializable{
     
     private int velocidad; //velocidad a la que se mueve
     private Defensa objetivoActual; //el objetivo más cercano para atacar
-    private transient Pantalla refPantalla; // si luego quieres usarla para otras cosas
+    private transient Pantalla refPantalla; 
     private transient JLabel refLabel;      // referencia directa al JLabel del zombie
     private int tamanoCasilla;              // tamaño de la celda recibido desde Pantalla
     private static int contadorZombies = 0; //para generar nombres/id diferentes
@@ -30,6 +29,7 @@ public abstract class Zombies extends Tropa implements Serializable{
     private volatile boolean cancelado_ = false;
     private volatile int battleIdSnapshot_ = -1;
     
+    public ArrayList<Defensa> listaDefensas = new ArrayList<>(); //lista con todas las defensas
 
 
 
@@ -60,8 +60,6 @@ public abstract class Zombies extends Tropa implements Serializable{
         contadorZombies = 0;
     }
     
-    //TODO: ponerlo en otro lado
-    public ArrayList<Defensa> listaDefensas = new ArrayList<>(); //lista con todas las defensas
 
     public void adjuntarUI(Pantalla pantalla, JLabel label, int tamanoCasilla) {
     this.refPantalla = pantalla;
@@ -69,67 +67,67 @@ public abstract class Zombies extends Tropa implements Serializable{
     this.tamanoCasilla =tamanoCasilla ;
      }
     @Override
-public void run() {
-    // --- snapshot de la batalla actual ---
-    tomarSnapshotBatalla();
+    public void run() {
+        // snapshot de la batalla actual
+        tomarSnapshotBatalla();
 
-    while (getVidaActual() > 0 && contextoBatallaVigente()) {
-        Juego j = getRefJuego();
-        if(j != null) j.esperaSiPausado();
-        // 1) Buscar objetivo si no hay o murió
-        if (objetivoActual == null || objetivoActual.getVidaActual() <= 0) {
-            objetivoActual = buscarObjetivo(listaDefensas);
-        }
-
-        if (!contextoBatallaVigente()) break;
-
-        if (objetivoActual != null) {
-            // ¿ya estoy en la misma celda que el objetivo?
-            boolean mismaCelda = (getFila() == objetivoActual.getFila() &&
-                                  getColumna() == objetivoActual.getColumna());
-
-            if (!mismaCelda) {
-                // --- MOVER UNA CASILLA HACIA EL OBJETIVO ---
-                int f = getFila();
-                int c = getColumna();
-
-                if (c < objetivoActual.getColumna()) c++;
-                else if (c > objetivoActual.getColumna()) c--;
-
-                if (f < objetivoActual.getFila()) f++;
-                else if (f > objetivoActual.getFila()) f--;
-
-                setFila(f);
-                setColumna(c);
-
-                // --- MOVER EL JLabel EN EL EDT, SIN Pantalla.moverZombie ---
-                final int x = c * tamanoCasilla;
-                final int y = f * tamanoCasilla;
-                final JLabel lbl = refLabel;
-                if (lbl != null) {
-                    SwingUtilities.invokeLater(() -> {
-                        lbl.setLocation(x, y);
-                        lbl.repaint();
-                    });
-                }
-            } else {
-                // --- ATACAR ---
-                atacar(objetivoActual);
+        while (getVidaActual() > 0 && contextoBatallaVigente()) {
+            Juego j = getRefJuego();
+            if(j != null) j.esperaSiPausado();
+            // Buscar objetivo si no hay o murió
+            if (objetivoActual == null || objetivoActual.getVidaActual() <= 0) {
+                objetivoActual = buscarObjetivo(listaDefensas);
             }
+
+            if (!contextoBatallaVigente()) break;
+
+            if (objetivoActual != null) {
+                // ¿ya estoy en la misma celda que el objetivo?
+                boolean mismaCelda = (getFila() == objetivoActual.getFila() &&
+                                      getColumna() == objetivoActual.getColumna());
+
+                if (!mismaCelda) {
+                    // se mueve una casilla hasta el objetivo 
+                    int f = getFila();
+                    int c = getColumna();
+
+                    if (c < objetivoActual.getColumna()) c++;
+                    else if (c > objetivoActual.getColumna()) c--;
+
+                    if (f < objetivoActual.getFila()) f++;
+                    else if (f > objetivoActual.getFila()) f--;
+
+                    setFila(f);
+                    setColumna(c);
+
+   
+                    final int x = c * tamanoCasilla;
+                    final int y = f * tamanoCasilla;
+                    final JLabel lbl = refLabel;
+                    if (lbl != null) {
+                        SwingUtilities.invokeLater(() -> {
+                            lbl.setLocation(x, y);
+                            lbl.repaint();
+                        });
+                    }
+                } else {
+                    // se ataca al obtejivo 
+                    atacar(objetivoActual);
+                }
+            }
+
+            if (!contextoBatallaVigente()) break;
+
+            // sleep corto con manejo de interrupción
+            dormirCorto(velocidad);
+            if (Thread.currentThread().isInterrupted() || !contextoBatallaVigente()) break;
         }
 
-        if (!contextoBatallaVigente()) break;
-
-        // sleep corto con manejo de interrupción
-        dormirCorto(velocidad);
-        if (Thread.currentThread().isInterrupted() || !contextoBatallaVigente()) break;
+        // Al morir o al finalizar por fin de batalla, puedes mostrar RIP solo si realmente murió
+        if (getVidaActual() <= 0 && refPantalla != null) {
+            SwingUtilities.invokeLater(() -> refPantalla.mostrarRIP(this));
+        }
     }
-
-    // Al morir o al finalizar por fin de batalla, puedes mostrar RIP solo si realmente murió
-    if (getVidaActual() <= 0 && refPantalla != null) {
-        SwingUtilities.invokeLater(() -> refPantalla.mostrarRIP(this));
-    }
-}
 
 
     public void marcarRecalculoObjetivo() { needRecalc = true; }
@@ -202,8 +200,7 @@ public void run() {
             setFila(this.getFila() - 1);
         }
         
-        // Actualizar UI solo si la posición cambió y hay referencia a pantalla
-        // Usar SwingUtilities.invokeLater para thread-safety
+        // Actualiza UI solo si la posición cambió y hay referencia a pantalla
         if (refPantalla != null && (filaAnterior != this.getFila() || columnaAnterior != this.getColumna())) {
             SwingUtilities.invokeLater(() -> {
                 refPantalla.actualizarPosicionTropa(this);
@@ -211,28 +208,32 @@ public void run() {
         }
     }
     protected final void tomarSnapshotBatalla() {
-    Juego j = getRefJuego();
-    battleIdSnapshot_ = (j != null ? j.getBatallaId() : -1);
-    cancelado_ = false;
-}
+        //se verifica que el battle id actual del juego sea el mismo q cuando el zombie comenzó
+        Juego j = getRefJuego();
+        battleIdSnapshot_ = (j != null ? j.getBatallaId() : -1);
+        cancelado_ = false;
+    }
 
-public final void cancelarPorFinDeBatalla() {
-    cancelado_ = true;
-    interrupt(); // despierta si está durmiendo
-}
+    public final void cancelarPorFinDeBatalla() {
+        cancelado_ = true;
+        interrupt(); // despierta si está durmiendo
+    }
 
-protected final boolean contextoBatallaVigente() {
-    Juego j = getRefJuego();
-    return !cancelado_ && j != null && j.getBatallaId() == battleIdSnapshot_;
-}
-
-protected final void dormirCorto(long ms) {
-    try { Thread.sleep(ms); }
-    catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
-}
+    //se usa en el run, en el while loop
+    protected final boolean contextoBatallaVigente() {
+        Juego j = getRefJuego();
+        return !cancelado_ && j != null && j.getBatallaId() == battleIdSnapshot_;
+    }
+    
+    //este es solamente un wrapper para no escribir try-catch cada vez
+    protected final void dormirCorto(long ms) { 
+        try { Thread.sleep(ms); }
+        catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+    }
+    
     public abstract boolean puedeAtacar(Defensa objetivoActual); //según su tipo y rango
 
-    
+
     //GETTERS
     public int getVelocidad() {
         return velocidad;

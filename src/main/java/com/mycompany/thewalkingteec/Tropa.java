@@ -24,10 +24,9 @@ public abstract class Tropa extends Thread{
     private int alcance;
     private int nivelDeAparicion;
     private int fila, columna; //posicion
-    //TODO: private Pantalla refPantalla;
     private transient Juego refJuego;
     private transient Pantalla refPantalla;
-    private transient javax.swing.JLabel refLabel; // opcional pero útil
+    private transient javax.swing.JLabel refLabel;
     protected volatile int myBattleId = -1;
     protected volatile boolean detenido = false;
     
@@ -35,45 +34,25 @@ public abstract class Tropa extends Thread{
     private List<RegistroAtaques> ataquesRealizados = new ArrayList<>();
     private List<RegistroAtaques> ataquesRecibidos = new ArrayList<>();
     
+    //registra este ataque realizado por una tropa hacia un objetivo 
     public void registrarAtaque(Tropa objetivo, int dano) {
+        
+        //this es quién atacó, objetivo a quién se atacó y así  
         RegistroAtaques registro = new RegistroAtaques(this, objetivo, dano, objetivo.getVidaActual(), objetivo.getVidaActual() - dano);
         this.ataquesRealizados.add(registro);
         objetivo.ataquesRecibidos.add(registro);
     }
     
-    /* TODO
-    //para que aparezcan en pantalla
-    public Tropa(JLabel refLabel, Pantalla refPantalla){
-        this.refLabel = refLabel;
-        this.refPantalla = refPantalla;
-        this.velocidad = (new Random().nextInt(5) + 1) * 1000; //1000 - 5000
-    }
-    
-    @Override
-    public void run(){
-        
-        while (isRunning){
-            try{
-                
-            }catch (InterruptedException ex){
-                
-            }
-        }
-    }
-    */
-    
-
+    //Método abstracto que define el comportamiento de ataque de cada tropa
     public abstract void atacar(Tropa objetivoAAtacar);
     
-   public synchronized int recibirAtaque(int dano){
+    //Método sincronizado para evitar problemas de concurrencia cuando muchos threads atacan a la misma vez y así 
+    public synchronized int recibirAtaque(int dano){
     if (getVidaActual() <= 0) return 0;
 
     int vidaAntes = getVidaActual();
     int vidaDespues = Math.max(0, vidaAntes - Math.max(0, dano));
     setVidaActual(vidaDespues);
-
-    // registrar
-    // (el que ataca debe llamar registrarAtaque(...); aquí solo aplicamos daño)
 
     if (vidaDespues <= 0) {
         morir();
@@ -89,25 +68,25 @@ public abstract class Tropa extends Thread{
     // dejar vida en 0
     setVidaActual(0);
 
-    // 1) detener thread
-    try { interrupt(); } catch(Exception ignored){}
+        // detiene el thread
+        try { interrupt(); } catch(Exception ignored){}
 
-    // 2) UI: mostrar RIP y remover label
-    Pantalla p = getRefPantalla();
-    javax.swing.JLabel lbl = getRefLabel();
-    if (p != null) {
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            p.mostrarRIP(this);
-            p.eliminarLabelDe(this); // método nuevo en Pantalla (abajo)
-        });
-    }
+        // Remueve el label
+        Pantalla p = getRefPantalla();
+        javax.swing.JLabel lbl = getRefLabel();
+        if (p != null) {
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                p.mostrarRIP(this); //no funciona correctamente este apartado 
+                p.eliminarLabelDe(this); 
+            });
+        }
 
-    // 3) Juego: quitar de listas y matriz
-    Juego j = getRefJuego();
-    if (j != null) {
-        j.eliminarTropa(this); // método nuevo en Juego (abajo)
+        // quitar de listas y matriz
+        Juego j = getRefJuego();
+        if (j != null) {
+            j.eliminarTropa(this);
+        }
     }
-}
     
     
     //GETTERS Y SETTERS
@@ -164,18 +143,32 @@ public abstract class Tropa extends Thread{
         return ataquesRecibidos;
     }
     
-    public void setBattleId(int id) { this.myBattleId = id; }
-    public void solicitarDetener() { this.detenido = true; this.interrupt(); }
+    public void setBattleId(int id) { 
+        this.myBattleId = id; 
+    }
+    public void solicitarDetener() { 
+        this.detenido = true; this.interrupt();
+    }
     
     
     public void setRefJuego(Juego j){ 
         this.refJuego = j; 
     }
-    public void setRefPantalla(Pantalla p){ this.refPantalla = p; }
-    public void setRefLabel(javax.swing.JLabel lbl){ this.refLabel = lbl; }
-    public javax.swing.JLabel getRefLabel(){ return refLabel; }
-    public Pantalla getRefPantalla(){ return refPantalla; }
-    public Juego getRefJuego(){ return refJuego; }
+    public void setRefPantalla(Pantalla p){
+        this.refPantalla = p;
+    }
+    public void setRefLabel(javax.swing.JLabel lbl){
+        this.refLabel = lbl; 
+    }
+    public javax.swing.JLabel getRefLabel(){ 
+        return refLabel; 
+    }
+    public Pantalla getRefPantalla(){
+        return refPantalla; 
+    }
+    public Juego getRefJuego(){ 
+        return refJuego; 
+    }
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
