@@ -35,7 +35,6 @@ public class Juego implements Serializable {
     
     private boolean finProcesado = false;
     private volatile boolean limpiezaHecha = false;
-    private volatile int battleId = 0;
     private int arbolNivelPersistente = 1;  
     private static final int ARBOL_VIDA_BASE = 1000; 
     private volatile int batallaId = 0;
@@ -92,8 +91,7 @@ public class Juego implements Serializable {
         finProcesado = false; 
     }
 
-     tickNuevaBatalla();    
-    battleId++;          
+     tickNuevaBatalla();             
 
     batallaEnCurso = true;
     limpiezaHecha = false;
@@ -104,12 +102,12 @@ public class Juego implements Serializable {
 
     for (Defensa d : listaDefensas) {
         if (d instanceof Arma a) a.setListaZombies(listaZombies);
-        d.setBattleId(battleId);
+        d.setBattleId(batallaId);
         if (!d.isAlive()) d.start();
     }
 
     for (Zombies z : listaZombies) {
-        z.setBattleId(battleId);
+        z.setBattleId(batallaId);
         if (!z.isAlive()) z.start();
     }
 
@@ -136,7 +134,7 @@ public class Juego implements Serializable {
     }
 
     
-    public int getBattleId() { return battleId; }
+    public int getBattleId() { return batallaId; }
     
     public synchronized void onArbolMuerto() {
     capturarResumenActual();
