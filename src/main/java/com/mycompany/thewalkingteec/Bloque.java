@@ -110,10 +110,11 @@ public class Bloque extends Defensa {
         super.subirNivel();
         // Al subir nivel, aumenta vida y resistencia
         setVidaInicial(getVidaInicial() + 100);
+        setVidaActual(getVidaInicial()); // Vida actual = vida inicial después de subir
         resistenciaExtra += 5;
-        
+
         System.out.println(getNombre() + " subió al nivel " + getNivel() + 
-                          ". Nueva vida: " + getVidaInicial() + 
+                          ". Nueva vida: " + getVidaActual() + 
                           ", resistencia: " + resistenciaExtra);
     }
     
