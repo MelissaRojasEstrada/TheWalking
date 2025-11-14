@@ -137,30 +137,30 @@ public class Juego implements Serializable {
     public int getBattleId() { return batallaId; }
     
     public synchronized void onArbolMuerto() {
-    capturarResumenActual();
-    batallaEnCurso = false;
-    detenerBatalla();
+        capturarResumenActual();
+        batallaEnCurso = false;
+        detenerBatalla();
 
-    for (int f = 0; f < TAMANO_MATRIZ; f++) {
-        for (int c = 0; c < TAMANO_MATRIZ; c++) {
-            matriz[f][c] = null;
+        for (int f = 0; f < TAMANO_MATRIZ; f++) {
+            for (int c = 0; c < TAMANO_MATRIZ; c++) {
+                matriz[f][c] = null;
+            }
         }
-    }
-    listaZombies.clear();
-    listaDefensas.clear();
-    arbol = null;
+        listaZombies.clear();
+        listaDefensas.clear();
+        arbol = null;
 
-    if (refPantalla != null) {
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            refPantalla.resetearTableroCompleto();
-            refPantalla.refrescarHUD();
-        });
-    }
+        if (refPantalla != null) {
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                refPantalla.resetearTableroCompleto();
+                refPantalla.refrescarHUD();
+            });
+        }
 
-    limpiezaHecha = true;
-    
-    finalizarBatalla();
-}
+        limpiezaHecha = true;
+
+        finalizarBatalla();
+    }
 
     private static class TropaResumen implements java.io.Serializable {
     String nombre;
@@ -360,108 +360,105 @@ public class Juego implements Serializable {
         return todosZombiesMuertos || arbolDestruido;
     }
 
-   public void finalizarBatalla() {
-    synchronized (finLock) {
-        if (finProcesado) return;
-        finProcesado = true;
-    }
-    if (ultimoResumenDefensas.isEmpty() && ultimoResumenZombies.isEmpty()) {
-        capturarResumenActual();
-    }
-    
-    reanudar();
-
-    
-    
-
-    batallaEnCurso = false;
-    detenerBatalla();
-
-    boolean arbolDestruido = (arbol == null) || (arbol.getVidaActual() <= 0);
-    boolean todosZombiesMuertos = true;
-    for (Zombies z : listaZombies) {
-        if (z.getVidaActual() > 0) { todosZombiesMuertos = false; break; }
-    }
-
-    // --- DERROTA (prioridad) ---
-    if (arbolDestruido) {
-        mostrarMensaje("Derrota: El Árbol de la Vida ha sido destruido");
-
-        mostrarResumenBatalla();
-
-        String[] opciones = {"Reintentar nivel", "Avanzar de nivel"};
-        int op = JOptionPane.showOptionDialog(
-            refPantalla,
-            "Derrota: el Árbol de la Vida ha sido destruido.\n¿Desea reintentar el nivel o avanzar de nivel?",
-            "Nivel perdido",
-            JOptionPane.DEFAULT_OPTION,
-            JOptionPane.QUESTION_MESSAGE,
-            null,
-            opciones,
-            opciones[0]
-        );
-
-        if (op == 1) { // Avanzar
-            avanzarNivel(); // limpia y deja listo siguiente
-        } else {        // Reintentar
-            prepararTableroParaNuevoNivel(); // limpia y deja listo mismo nivel
-            mostrarMensaje("Reintento del nivel " + nivelActual + ". Coloque Árbol y defensas y presione Start.");
+    public void finalizarBatalla() {
+        synchronized (finLock) {
+            if (finProcesado) return;
+            finProcesado = true;
         }
-        return; // ← no volver a llamar mostrarResumenBatalla()
-    }
-
-    // --- VICTORIA ---
-    if (todosZombiesMuertos) {
-        mostrarMensaje("¡Victoria! Has completado el nivel " + nivelActual);
-        mostrarResumenBatalla();
-
-        int opcion = JOptionPane.showConfirmDialog(
-            null,
-            "¿Desea avanzar al siguiente nivel?",
-            "Nivel completado",
-            JOptionPane.YES_NO_OPTION
-        );
-
-        if (opcion == JOptionPane.YES_OPTION) {
-            avanzarNivel();
-        } else {
-            prepararTableroParaNuevoNivel();
+        if (ultimoResumenDefensas.isEmpty() && ultimoResumenZombies.isEmpty()) {
+            capturarResumenActual();
         }
-        return;
+
+        reanudar();
+
+        batallaEnCurso = false;
+        detenerBatalla();
+
+        boolean arbolDestruido = (arbol == null) || (arbol.getVidaActual() <= 0);
+        boolean todosZombiesMuertos = true;
+        for (Zombies z : listaZombies) {
+            if (z.getVidaActual() > 0) { todosZombiesMuertos = false; break; }
+        }
+
+        // derrota 
+        if (arbolDestruido) {
+            mostrarMensaje("Derrota: El Árbol de la Vida ha sido destruido");
+
+            mostrarResumenBatalla();
+
+            String[] opciones = {"Reintentar nivel", "Avanzar de nivel"};
+            int op = JOptionPane.showOptionDialog(
+                refPantalla,
+                "Derrota: el Árbol de la Vida ha sido destruido.\n¿Desea reintentar el nivel o avanzar de nivel?",
+                "Nivel perdido",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opciones,
+                opciones[0]
+            );
+
+            if (op == 1) { // avanza
+                avanzarNivel(); // limpia y deja listo siguiente
+            } else {        // sino se reintenta
+                prepararTableroParaNuevoNivel(); // limpia y deja listo mismo nivel
+                mostrarMensaje("Reintento del nivel " + nivelActual + ". Coloque Árbol y defensas y presione Start.");
+            }
+            return; 
+        }
+
+        // victoria 
+        if (todosZombiesMuertos) {
+            mostrarMensaje("¡Victoria :)! Has completado el nivel " + nivelActual);
+            mostrarResumenBatalla();
+
+            int opcion = JOptionPane.showConfirmDialog(
+                null,
+                "¿Desea avanzar al siguiente nivel?",
+                "Nivel completado",
+                JOptionPane.YES_NO_OPTION
+            );
+
+            if (opcion == JOptionPane.YES_OPTION) {
+                avanzarNivel();
+            } else {
+                prepararTableroParaNuevoNivel();
+            }
+            return;
+        }
+
+        // Caso raro
+        if (refPantalla != null) {
+            javax.swing.SwingUtilities.invokeLater(refPantalla::refrescarHUD);
+        }
     }
 
-    // Caso raro
-    if (refPantalla != null) {
-        javax.swing.SwingUtilities.invokeLater(refPantalla::refrescarHUD);
+    public void pausar() {
+        if (!batallaEnCurso) return;
+        pausado = true;
     }
-}
 
-public void pausar() {
-    if (!batallaEnCurso) return;
-    pausado = true;
-}
-
-public void reanudar() {
-    synchronized (pauseLock) {
-        pausado = false;
-        pauseLock.notifyAll(); // despierta a todos los hilos pausados
+    public void reanudar() {
+        synchronized (pauseLock) {
+            pausado = false;
+            pauseLock.notifyAll(); // despierta a todos los hilos pausados
+        }
     }
-}
 
-public boolean isPausado() { return pausado; }
+    public boolean isPausado() { return pausado; }
 
 
-public void esperaSiPausado() {
-    if (!pausado) return;
-    synchronized (pauseLock) {
-        while (pausado) {
-            try { pauseLock.wait(); } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                break;
+    public void esperaSiPausado() {
+        if (!pausado) return;
+        synchronized (pauseLock) {
+            while (pausado) {
+                try { pauseLock.wait(); } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
         }
     }
-}
 
 
     public void avanzarNivel() {
@@ -510,102 +507,105 @@ public void esperaSiPausado() {
         listaZombies.clear();
     }
     private void limpiarDefensas() {
-    // quita de la matriz
-    for (Defensa d : new ArrayList<>(listaDefensas)) {
-        if (d instanceof ArbolDeLaVida) continue;
-        int f = d.getFila(), c = d.getColumna();
-        if (f >= 0 && f < TAMANO_MATRIZ && c >= 0 && c < TAMANO_MATRIZ && matriz[f][c] == d) {
+        // quita de la matriz
+        for (Defensa d : new ArrayList<>(listaDefensas)) {
+            if (d instanceof ArbolDeLaVida) continue;
+            int f = d.getFila(), c = d.getColumna();
+            if (f >= 0 && f < TAMANO_MATRIZ && c >= 0 && c < TAMANO_MATRIZ && matriz[f][c] == d) {
+                matriz[f][c] = null;
+            }
+        }
+        // quita de la lista
+        listaDefensas.removeIf(d -> !(d instanceof ArbolDeLaVida));
+
+        // UI
+        if (refPantalla != null) {
+            javax.swing.SwingUtilities.invokeLater(refPantalla::removerDefensasVisuales);
+        }
+    }
+
+    // Quita el árbol del modelo y matriz (subiéndolo de nivel ANTES si corresponde)
+    private void subirYQuitarArbolParaNuevoNivel() {
+        if (arbol == null) return;
+
+        // Subir de nivel
+        arbol.subirNivel();
+
+        // Quitar de matriz
+        int f = arbol.getFila(), c = arbol.getColumna();
+        if (f >= 0 && f < TAMANO_MATRIZ && c >= 0 && c < TAMANO_MATRIZ && matriz[f][c] == arbol) {
             matriz[f][c] = null;
         }
-    }
-    // quita de la lista
-    listaDefensas.removeIf(d -> !(d instanceof ArbolDeLaVida));
 
-    // UI
-    if (refPantalla != null) {
-        javax.swing.SwingUtilities.invokeLater(refPantalla::removerDefensasVisuales);
-    }
-}
+        // Quitar de lista de defensas
+        listaDefensas.remove(arbol);
 
-// Quita el árbol del modelo y matriz (subiéndolo de nivel ANTES si corresponde)
-private void subirYQuitarArbolParaNuevoNivel() {
-    if (arbol == null) return;
-
-    // Subir de nivel
-    arbol.subirNivel();
-
-    // Quitar de matriz
-    int f = arbol.getFila(), c = arbol.getColumna();
-    if (f >= 0 && f < TAMANO_MATRIZ && c >= 0 && c < TAMANO_MATRIZ && matriz[f][c] == arbol) {
-        matriz[f][c] = null;
-    }
-
-    // Quitar de lista de defensas
-    listaDefensas.remove(arbol);
-
-    // Quitar de UI
-    if (refPantalla != null) {
-        javax.swing.SwingUtilities.invokeLater(refPantalla::removerArbolVisual);
-    }
-
-    // Dejar null para que el jugador lo coloque de nuevo
-    arbol = null;
-}
-    public void prepararTableroParaNuevoNivel() {
-    // Parar hilos y esperar un toque
-    detenerBatalla();
-    joinHilosVivos(600);      
-    batallaEnCurso = false;
-    
-    subirYQuitarArbolParaNuevoNivel();
-
-    // Vaciar MODELO por completo (listas + matriz)
-    listaZombies = new ArrayList<>();
-    listaDefensas = new ArrayList<>();
-    matriz = new Tropa[TAMANO_MATRIZ][TAMANO_MATRIZ];
-    arbol = null;
-
-    // Vaciar UI de un solo golpe (en EDT)
+        // Quitar de UI
         if (refPantalla != null) {
-            javax.swing.SwingUtilities.invokeLater(() -> {
-                refPantalla.resetearTableroCompleto();
-                refPantalla.setModoJuegoBloqueado(false);
-                refPantalla.refrescarHUD();
-            });
+            javax.swing.SwingUtilities.invokeLater(refPantalla::removerArbolVisual);
         }
 
-    // Recalcular espacios del ejército para este nivel
-    espaciosEjercitoDisponibles = ESPACIOS_INICIALES + (nivelActual - 1) * ESPACIOS_POR_NIVEL;
+        // Dejar null para que el jugador lo coloque de nuevo
+        arbol = null;
+    }
+    public void prepararTableroParaNuevoNivel() {
+        // Parar hilos y esperar un toque
+        detenerBatalla();
+        joinHilosVivos(600);      
+        batallaEnCurso = false;
 
-    // Desarmar cualquier final viejo
-    synchronized (finLock) { finProcesado = false; }
-}
+        subirYQuitarArbolParaNuevoNivel();
 
-   private void joinHilosVivos(long millisMax) {
-    long deadline = System.currentTimeMillis() + Math.max(0, millisMax);
+        // Vaciar modelo por completo (listas + matriz)
+        listaZombies = new ArrayList<>();
+        listaDefensas = new ArrayList<>();
+        matriz = new Tropa[TAMANO_MATRIZ][TAMANO_MATRIZ];
+        arbol = null;
 
-    // defensas
-    for (Defensa d : new ArrayList<>(listaDefensas)) {
-        if (d != null && d.isAlive()) {
-            try {
-                long left = deadline - System.currentTimeMillis();
-                if (left <= 0) break;
-                d.join(Math.min(left, 200)); // joins cortitos
-            } catch (InterruptedException ignored) { }
-        }
+        // Vaciar UI de un solo golpe (en EDT)
+            if (refPantalla != null) {
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    refPantalla.resetearTableroCompleto();
+                    refPantalla.setModoJuegoBloqueado(false);
+                    refPantalla.refrescarHUD();
+                });
+            }
+
+        // Recalcular espacios del ejército para este nivel
+        espaciosEjercitoDisponibles = ESPACIOS_INICIALES + (nivelActual - 1) * ESPACIOS_POR_NIVEL;
+
+        // Desarmar cualquier final viejo
+        synchronized (finLock) { finProcesado = false; }
     }
 
-    // zombies
-    for (Zombies z : new ArrayList<>(listaZombies)) {
-        if (z != null && z.isAlive()) {
-            try {
-                long left = deadline - System.currentTimeMillis();
-                if (left <= 0) break;
-                z.join(Math.min(left, 200));
-            } catch (InterruptedException ignored) { }
+    private void joinHilosVivos(long millisMax) {
+        
+        //calcula el tiempo límite 
+        long deadline = System.currentTimeMillis() + Math.max(0, millisMax);
+
+        // defensas
+        for (Defensa d : new ArrayList<>(listaDefensas)) {
+            if (d != null && d.isAlive()) { //sigue vivo el thread?
+                try {
+                    //calcular cuánto tiempo queda antes del deadline
+                    long left = deadline - System.currentTimeMillis();
+                    if (left <= 0) break; //tiempo acabado salga del loop
+                    d.join(Math.min(left, 200)); // joins cortitos
+                } catch (InterruptedException ignored) { }
+            }
+        }
+
+        // zombies
+        for (Zombies z : new ArrayList<>(listaZombies)) {
+            if (z != null && z.isAlive()) {
+                try {
+                    long left = deadline - System.currentTimeMillis();
+                    if (left <= 0) break;
+                    z.join(Math.min(left, 200));
+                } catch (InterruptedException ignored) { }
+            }
         }
     }
-}
 
 
     public void mostrarResumenBatalla() {
@@ -676,12 +676,12 @@ private void subirYQuitarArbolParaNuevoNivel() {
     if (f0 >= 0 && f0 < TAMANO_MATRIZ && c0 >= 0 && c0 < TAMANO_MATRIZ) {
         if (matriz[f0][c0] == d) matriz[f0][c0] = null;
     }
-        // Coloca en nueva casilla (si está libre o si decides permitir “volar sobre”)
+        // Coloca en nueva casilla 
         if (f1 >= 0 && f1 < TAMANO_MATRIZ && c1 >= 0 && c1 < TAMANO_MATRIZ) {
         matriz[f1][c1] = d;
         }
     }
-    // TODO: revisar este metodo
+    
     public void guardarPartida(String nombreArchivo) {
         try {
             // Detener batalla si está en curso
@@ -702,7 +702,7 @@ private void subirYQuitarArbolParaNuevoNivel() {
         }
     }
 
-    // TODO: revisar este metodo
+   
     public static Juego cargarPartida(String nombreArchivo) {
         Juego juego = null;
         try {
@@ -722,7 +722,7 @@ private void subirYQuitarArbolParaNuevoNivel() {
         return juego;
     }
 
-    // TODO: revisar la parte de costo defensas (creo que se repite)
+   
     public boolean agregarDefensa(Defensa defensa) {
         // espacios disponibles
         int costoCampos = defensa.getCostoCampos();
@@ -752,25 +752,25 @@ private void subirYQuitarArbolParaNuevoNivel() {
     }
 
     public void resetearParaNuevoNivel() {
-        // 1) Detén combate y hilos
+        // Detener el combate y hilos
         detenerBatalla();
 
-        // 2) Eliminar de la matriz
+        // Eliminar de la matriz
         for (int f = 0; f < TAMANO_MATRIZ; f++) {
             for (int c = 0; c < TAMANO_MATRIZ; c++) {
                 matriz[f][c] = null;
             }
         }
 
-        // 3) Limpiar listas del modelo
+        // Limpiar las listas del modelo
         listaDefensas.clear();
         listaZombies.clear();
         arbol = null;
 
-        // 4) Recalcular espacios del ejército para este nivel
+        // acá se recalcula los espacios del ejército para este nivel
         espaciosEjercitoDisponibles = ESPACIOS_INICIALES + (nivelActual - 1) * ESPACIOS_POR_NIVEL;
 
-        // 5) Limpiar UI
+        // Limpiar UI
         if (refPantalla != null) {
             refPantalla.resetearTableroCompleto();
             // si hiciste wrapper:
@@ -779,53 +779,51 @@ private void subirYQuitarArbolParaNuevoNivel() {
     }
 
     public void prepararNuevoNivelDesdeCero() {
-        // 1) Parar pelea y threads
+        // Para pelea y threads
         detenerBatalla();
 
-        // 2) Resetear modelo COMPLETO
+        // Resetea el modelo completoo
         listaZombies.clear();
         listaDefensas.clear();
         matriz = new Tropa[TAMANO_MATRIZ][TAMANO_MATRIZ];
         arbol = null;
 
-        // 3) Vaciar UI
+        // Vaciar UI
         if (refPantalla != null) {
             refPantalla.resetearTableroCompleto();
         }
 
-        // 4) Mensaje guía
         mostrarMensaje("Nuevo nivel " + nivelActual + ". Coloca de nuevo el Árbol y tus defensas, luego presiona Start.");
     }
 
     // setter de arbol
     public void setArbol(ArbolDeLaVida arbol) {
-    this.arbol = arbol;
+        this.arbol = arbol;
 
-    // Posición en la matriz
-    int f = arbol.getFila(), c = arbol.getColumna();
-    if (f >= 0 && f < TAMANO_MATRIZ && c >= 0 && c < TAMANO_MATRIZ) {
-        matriz[f][c] = arbol;
-    }
+        // Posición en la matriz
+        int f = arbol.getFila(), c = arbol.getColumna();
+        if (f >= 0 && f < TAMANO_MATRIZ && c >= 0 && c < TAMANO_MATRIZ) {
+            matriz[f][c] = arbol;
+        }
 
-    if (!listaDefensas.contains(arbol)) {
-        listaDefensas.add(arbol);
-    }
+        if (!listaDefensas.contains(arbol)) {
+            listaDefensas.add(arbol);
+        }
 
-    arbol.setRefJuego(this);
-    if (refPantalla != null) {
-        arbol.setRefPantalla(refPantalla);
-    }
+        arbol.setRefJuego(this);
+        if (refPantalla != null) {
+            arbol.setRefPantalla(refPantalla);
+        }
 
-    // <<< ADD: aplicar nivel persistente al nuevo Árbol colocado >>>
-    // El constructor lo deja en 1000; subimos (nivel-1) veces para sumar +100 por nivel.
-    int nivelObjetivo = Math.max(1, arbolNivelPersistente);
-    for (int i = 1; i < nivelObjetivo; i++) {
-        arbol.subirNivel();
+        // El constructor lo deja en 1000; sube (nivel-1) veces para sumar +100 por nivel.
+        int nivelObjetivo = Math.max(1, arbolNivelPersistente);
+        for (int i = 1; i < nivelObjetivo; i++) {
+            arbol.subirNivel();
+        }
     }
-}
-    private void tickNuevaBatalla() {
-    batallaId++; // nuevo id para distinguir hilos viejos de los nuevos
-}
+        private void tickNuevaBatalla() {
+        batallaId++; // nuevo id para distinguir hilos viejos de los nuevos
+    }
 
 
     public void mostrarMensaje(String mensaje) {
@@ -835,10 +833,7 @@ private void subirYQuitarArbolParaNuevoNivel() {
         }
     }
 
-    // ===============================
     // GETTERS
-    // ===============================
-
     public static long getSerialVersionUID() {
         return serialVersionUID;
     }
@@ -902,9 +897,7 @@ private void subirYQuitarArbolParaNuevoNivel() {
     return batallaId;
 }
 
-    // ===============================
     // SETTERS
-    // ===============================
 
     public void setNombreJugador(String nombreJugador) {
         this.nombreJugador = nombreJugador;
