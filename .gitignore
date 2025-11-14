@@ -1,3 +1,12 @@
+<<<<<<< HEAD
 WalkingTeec/src/test/
 WalkingTeec/target/
 WalkingTeec/pom.xml
+=======
+WalkingTeeec/src/test/
+WalkingTeeec/target/
+WalkingTeeec/pom.xml
+/src/test/
+/target/
+/pom.xml
+>>>>>>> feature/meli
